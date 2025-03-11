@@ -101,7 +101,7 @@ const Penghuni = () => {
             {penghuniList.map((penghuni) => (
               <button
                 key={penghuni.id}
-                onClick={() => handleKamarClick("/dashboard/penghuni/kamar")}
+                onClick={() => handleKamarClick("/dashboard/penghuni/[id]")}
                 className="bg-blue-100 hover:bg-blue-200 p-5 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105"
               >
                 <div className="flex items-center justify-between">
