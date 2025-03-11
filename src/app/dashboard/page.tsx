@@ -2,30 +2,34 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FaUsers, FaMoneyBillAlt } from "react-icons/fa";
 import { TbLogout2 } from "react-icons/tb";
-import { getDaftarPenghuni } from "./data"; // Import data
-
-interface Penghuni {
-  id: number;
-  nama: string;
-  nomorKamar: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-}
-
-const daftarPenghuni: Penghuni[] = getDaftarPenghuni() as Penghuni[];
+import { getDaftarPenghuni, PenghuniData, initialData } from "./data"; // Import data dan interface
 
 const Dashboard = () => {
   const router = useRouter();
+  const [daftarPenghuni, setDaftarPenghuni] = useState<PenghuniData[]>([]);
+
+  useEffect(() => {
+    // Mengambil data dari getDaftarPenghuni
+    const data = getDaftarPenghuni();
+
+    // Jika localstorage kosong, maka inisialisasi dengan initialData
+    if (data.length === 0) {
+      localStorage.setItem("daftarPenghuni", JSON.stringify(initialData));
+      setDaftarPenghuni(initialData);
+    } else {
+      setDaftarPenghuni(data);
+    }
+  }, []);
 
   const handlePenghuniClick = () => {
     router.push("/dashboard/penghuni");
   };
 
   const handleKeuanganClick = () => {
-    router.push("/dashboard/task");
+    router.push("/dashboard/keuangan");
   };
 
   const handleTambahPenghuniClick = () => {
@@ -36,21 +40,25 @@ const Dashboard = () => {
     router.push("/"); // Mengarahkan ke halaman awal
   };
 
+  // Fungsi untuk menghitung kamar yang jatuh tempo
+  const hitungKamarJatuhTempo = (penghuniList: PenghuniData[]): number => {
+    return penghuniList.filter((penghuni) => {
+      const today = new Date();
+      const selesaiDate = new Date(penghuni.tanggalSelesai);
+      const diffTime = selesaiDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 && diffDays < 7; // Sisa kurang dari 7 hari DAN lebih dari 0
+    }).length;
+  };
+
   // Menghitung jumlah kamar terisi
-  const kamarTerisi = daftarPenghuni.length; // Mendapatkan panjang array daftarPenghuni
+  const kamarTerisi = daftarPenghuni.length;
   // Anggap jumlah total kamar adalah 10 (bisa diubah sesuai kebutuhan)
   const totalKamar = 10;
   // Menghitung jumlah kamar kosong
   const kamarKosong = totalKamar - kamarTerisi;
-
   // Menghitung kamar yang sebentar lagi jatuh tempo
-  const kamarJatuhTempo = daftarPenghuni.filter((penghuni) => {
-    const today = new Date();
-    const selesaiDate = new Date(penghuni.tanggalSelesai);
-    const diffTime = selesaiDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 && diffDays < 7; // Sisa kurang dari 7 hari DAN lebih dari 0
-  }).length;
+  const kamarJatuhTempo = hitungKamarJatuhTempo(daftarPenghuni);
 
   // Teks tombol
   const buttonText =

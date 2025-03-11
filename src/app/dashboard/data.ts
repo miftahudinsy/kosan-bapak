@@ -1,7 +1,16 @@
 // c:\Users\mifta\next-js\bapak-kosan\src\app\dashboard\data.ts
 
-// Inisialisasi data awal di sini
-const initialData = [
+//Definisikan Interface PenghuniData
+export interface PenghuniData {
+  id: number;
+  noKamar: string;
+  nama: string;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+}
+
+// Inisialisasi data awal di sini (sekarang di-export agar bisa digunakan di luar file ini)
+export const initialData: PenghuniData[] = [
   {
     id: 1,
     noKamar: "A1",
@@ -18,15 +27,16 @@ const initialData = [
   },
 ];
 
-// Menyimpan data ke localStorage
-const saveDataToLocalStorage = (data: any) => {
+// Menyimpan data ke localStorage (sekarang dengan tipe data yang benar)
+const saveDataToLocalStorage = (data: PenghuniData[]) => {
   if (typeof window !== "undefined") {
     // Memastikan kode hanya berjalan di sisi klien
     localStorage.setItem("daftarPenghuni", JSON.stringify(data));
   }
 };
 
-export const getDaftarPenghuni = () => {
+// Mendapatkan data dari localStorage atau menggunakan initialData (sekarang dengan tipe data kembalian)
+export const getDaftarPenghuni = (): PenghuniData[] => {
   if (typeof window !== "undefined") {
     // Memastikan kode hanya berjalan di sisi klien
     const storedData = localStorage.getItem("daftarPenghuni");
@@ -35,15 +45,18 @@ export const getDaftarPenghuni = () => {
   return initialData;
 };
 
-export const tambahPenghuni = (dataPenghuni: {
-  nama: string;
-  noKamar: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-}) => {
+// Menambah penghuni baru (sekarang dengan tipe data kembalian dan parameter yang benar)
+export const tambahPenghuni = (dataPenghuni: Omit<PenghuniData, "id">) => {
   const currentData = getDaftarPenghuni();
-  const idBaru =
-    currentData.length > 0 ? currentData[currentData.length - 1].id + 1 : 1;
-  const newData = [...currentData, { id: idBaru, ...dataPenghuni }];
+  const lastId =
+    currentData.length > 0
+      ? Math.max(...currentData.map((item) => item.id))
+      : 0;
+  const newId = lastId + 1;
+
+  const newData: PenghuniData[] = [
+    ...currentData,
+    { id: newId, ...dataPenghuni },
+  ];
   saveDataToLocalStorage(newData); // Menyimpan data setiap kali ada perubahan
 };
