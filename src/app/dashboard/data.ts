@@ -58,5 +58,36 @@ export const tambahPenghuni = (dataPenghuni: Omit<PenghuniData, "id">) => {
     ...currentData,
     { id: newId, ...dataPenghuni },
   ];
-  saveDataToLocalStorage(newData); // Menyimpan data setiap kali ada perubahan
+  saveDataToLocalStorage(newData);
+};
+
+// Edit data penghuni
+export const editPenghuni = (
+  id: number,
+  data: Partial<Omit<PenghuniData, "id">>
+) => {
+  const currentData = getDaftarPenghuni();
+  const updatedData = currentData.map((item) =>
+    item.id === id ? { ...item, ...data } : item
+  );
+  saveDataToLocalStorage(updatedData);
+  return updatedData;
+};
+
+// Perpanjang masa kos
+export const perpanjangKos = (id: number, tanggalSelesaiBaru: string) => {
+  const currentData = getDaftarPenghuni();
+  const updatedData = currentData.map((item) =>
+    item.id === id ? { ...item, tanggalSelesai: tanggalSelesaiBaru } : item
+  );
+  saveDataToLocalStorage(updatedData);
+  return updatedData;
+};
+
+// Hapus data penghuni
+export const hapusPenghuni = (id: number) => {
+  const currentData = getDaftarPenghuni();
+  const updatedData = currentData.filter((item) => item.id !== id);
+  saveDataToLocalStorage(updatedData);
+  return updatedData;
 };

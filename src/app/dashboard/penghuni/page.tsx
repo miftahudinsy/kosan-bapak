@@ -29,8 +29,8 @@ const Penghuni = () => {
     setPenghuniList(data);
   }, []);
 
-  const handleKamarClick = (path: string) => {
-    router.push(path);
+  const handleKamarClick = (id: number) => {
+    router.push(`/dashboard/penghuni/${id}`);
   };
 
   const handleBack = () => {
@@ -92,21 +92,30 @@ const Penghuni = () => {
         >
           <FaArrowLeft /> Kembali
         </button>
-        <h1 className="text-xl font-bold text-gray-900 mb-3">
-          Daftar penghuni kos :
-        </h1>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between ">
+          <h1 className="text-xl font-bold text-gray-900 mb-4 sm:mb-0">
+            Daftar penghuni kos :
+          </h1>
+          <button
+            onClick={handleTambahPenghuniClick}
+            className="flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-600 font-bold "
+          >
+            <FaPlus className="text-blue-600" /> Tambah Penghuni Baru
+          </button>
+        </div>
 
         <section className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {penghuniList.map((penghuni) => (
               <button
                 key={penghuni.id}
-                onClick={() => handleKamarClick("/dashboard/penghuni/[id]")}
+                onClick={() => handleKamarClick(penghuni.id)}
                 className="bg-blue-100 hover:bg-blue-200 p-5 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-left space-y-2">
-                    <h3 className="text-xl font-semibold text-blue-800">
+                    <h3 className="text-xl font-bold text-blue-800">
                       {penghuni.nama}
                     </h3>
                     <p className="text-gray-600">
@@ -153,12 +162,6 @@ const Penghuni = () => {
                 </div>
               </button>
             ))}
-            <button
-              onClick={handleTambahPenghuniClick}
-              className="flex items-center justify-center w-full sm:w-auto gap-2 bg-blue-100 hover:bg-blue-200 p-5 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-600 font-semibold"
-            >
-              <FaPlus /> Tambah Penghuni Baru
-            </button>
           </div>
         </section>
 
@@ -260,7 +263,7 @@ const Penghuni = () => {
                 </div>
                 <button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full w-full"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full w-full"
                 >
                   Simpan
                 </button>
