@@ -174,103 +174,115 @@ const Keuangan = () => {
 
         {activeTab === "pemasukan" ? (
           <>
-            {/* Tampilan Desktop Pemasukan */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tanggal
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nama Penghuni
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Jenis Pembayaran
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nominal
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+            {riwayatPembayaran.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-lg">
+                  Belum ada data pemasukan
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Tampilan Desktop Pemasukan */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tanggal
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nama Penghuni
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Jenis Pembayaran
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nominal
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {riwayatPembayaran.map((pembayaran) => (
+                        <tr key={pembayaran.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(pembayaran.tanggal)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {getNamaPenghuni(pembayaran.idPenghuni)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {pembayaran.jenis}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                            {formatCurrency(pembayaran.nominal)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button
+                              onClick={() => handleDeleteClick(pembayaran)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Tampilan Mobile Pemasukan */}
+                <div className="md:hidden space-y-4">
                   {riwayatPembayaran.map((pembayaran) => (
-                    <tr key={pembayaran.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(pembayaran.tanggal)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {getNamaPenghuni(pembayaran.idPenghuni)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {pembayaran.jenis}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                        {formatCurrency(pembayaran.nominal)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div
+                      key={pembayaran.id}
+                      className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-base text-gray-500">Tanggal</p>
+                          <p className="text-base font-medium text-gray-900">
+                            {formatDate(pembayaran.tanggal)}
+                          </p>
+                        </div>
                         <button
                           onClick={() => handleDeleteClick(pembayaran)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 p-2"
                         >
-                          <FaTrash />
+                          <FaTrash className="text-lg" />
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-base text-gray-500">
+                            Nama Penghuni
+                          </p>
+                          <p className="text-base font-medium text-gray-900">
+                            {getNamaPenghuni(pembayaran.idPenghuni)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-gray-500">
+                            Jenis Pembayaran
+                          </p>
+                          <p className="text-base font-medium text-gray-900">
+                            {pembayaran.jenis}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-gray-500">Nominal</p>
+                          <p className="text-base font-semibold text-green-600">
+                            {formatCurrency(pembayaran.nominal)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Tampilan Mobile Pemasukan */}
-            <div className="md:hidden space-y-4">
-              {riwayatPembayaran.map((pembayaran) => (
-                <div
-                  key={pembayaran.id}
-                  className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="text-base text-gray-500">Tanggal</p>
-                      <p className="text-base font-medium text-gray-900">
-                        {formatDate(pembayaran.tanggal)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteClick(pembayaran)}
-                      className="text-red-600 hover:text-red-900 p-2"
-                    >
-                      <FaTrash className="text-lg" />
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-base text-gray-500">Nama Penghuni</p>
-                      <p className="text-base font-medium text-gray-900">
-                        {getNamaPenghuni(pembayaran.idPenghuni)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-base text-gray-500">
-                        Jenis Pembayaran
-                      </p>
-                      <p className="text-base font-medium text-gray-900">
-                        {pembayaran.jenis}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-base text-gray-500">Nominal</p>
-                      <p className="text-base font-semibold text-green-600">
-                        {formatCurrency(pembayaran.nominal)}
-                      </p>
-                    </div>
-                  </div>
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </>
         ) : (
           <>
