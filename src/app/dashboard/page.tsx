@@ -54,7 +54,7 @@ const Dashboard = () => {
   // Menghitung jumlah kamar terisi
   const kamarTerisi = daftarPenghuni.length;
   // Anggap jumlah total kamar adalah 10 (bisa diubah sesuai kebutuhan)
-  const totalKamar = 10;
+  const totalKamar = 5;
   // Menghitung jumlah kamar kosong
   const kamarKosong = totalKamar - kamarTerisi;
   // Menghitung kamar yang sebentar lagi jatuh tempo

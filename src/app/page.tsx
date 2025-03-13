@@ -13,7 +13,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center">
       <h1 className="text-5xl font-bold text-gray-800 mb-3 text-center">
-        Bapak Kosan
+        Kosan Bapak
       </h1>
       <p className="text-xl text-gray-600 mb-10 text-center">
         Kelola kos-kosan jadi gampang.
