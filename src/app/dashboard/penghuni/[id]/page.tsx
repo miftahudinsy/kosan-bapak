@@ -7,6 +7,7 @@ import {
   FaEdit,
   FaCalendarPlus,
   FaTrash,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import {
   getDaftarPenghuni,
@@ -16,6 +17,7 @@ import {
   KontakDaruratType,
   tambahRiwayatPembayaran,
   formatCurrency,
+  akhiriSewaKos,
 } from "../../data";
 
 interface KontakDarurat {
@@ -47,6 +49,7 @@ export default function DetailPenghuni({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPerpanjangModalOpen, setIsPerpanjangModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAkhiriSewaModalOpen, setIsAkhiriSewaModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     nama: "",
     noKamar: "",
@@ -171,6 +174,15 @@ export default function DetailPenghuni({
       hapusPenghuni(penghuni.id);
       setIsDeleteModalOpen(false);
       router.back();
+    }
+  };
+
+  const handleAkhiriSewa = () => {
+    if (penghuni) {
+      // Pindahkan ke daftar penghuni lama
+      const updatedData = akhiriSewaKos(penghuni.id);
+      setIsAkhiriSewaModalOpen(false);
+      router.push("/dashboard/penghuni-lama");
     }
   };
 
@@ -349,12 +361,18 @@ export default function DetailPenghuni({
           </div>
 
           {/* Tombol Aksi */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
             <button
               onClick={() => setIsPerpanjangModalOpen(true)}
               className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-5 rounded-lg font-medium transition-colors"
             >
               <FaCalendarPlus /> Perpanjang Kos
+            </button>
+            <button
+              onClick={() => setIsAkhiriSewaModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-5 rounded-lg font-medium transition-colors"
+            >
+              <FaSignOutAlt /> Akhiri Sewa Kos
             </button>
             <button
               onClick={() => setIsEditModalOpen(true)}
@@ -603,6 +621,33 @@ export default function DetailPenghuni({
               </button>
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Akhiri Sewa */}
+      {isAkhiriSewaModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-6">Konfirmasi Akhiri Sewa</h2>
+            <p className="text-gray-600 mb-6">
+              Apakah Anda yakin ingin mengakhiri masa sewa kos untuk penghuni
+              ini? Data akan dipindahkan ke daftar penghuni lama.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={handleAkhiriSewa}
+                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-4 px-4 rounded-lg"
+              >
+                Ya, Akhiri Sewa
+              </button>
+              <button
+                onClick={() => setIsAkhiriSewaModalOpen(false)}
                 className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg"
               >
                 Batal

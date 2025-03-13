@@ -147,7 +147,7 @@ const Keuangan = () => {
           <div className="flex space-x-2 bg-blue-50 p-1.5 rounded-full">
             <button
               onClick={() => setActiveTab("pemasukan")}
-              className={`px-4 py-4 rounded-full font-semibold transition-all ${
+              className={`px-4 py-3 rounded-full font-semibold transition-all ${
                 activeTab === "pemasukan"
                   ? "bg-white text-black shadow-md"
                   : "text-gray-600"
@@ -157,7 +157,7 @@ const Keuangan = () => {
             </button>
             <button
               onClick={() => setActiveTab("pengeluaran")}
-              className={`px-4 py-2 rounded-full font-semibold transition-all ${
+              className={`px-4 py-3 rounded-full font-semibold transition-all ${
                 activeTab === "pengeluaran"
                   ? "bg-white text-black shadow-md"
                   : "text-gray-600"

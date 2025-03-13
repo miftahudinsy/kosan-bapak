@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import { FaBed, FaArrowLeft, FaPlus } from "react-icons/fa";
+import { FaBed, FaArrowLeft, FaPlus, FaHistory } from "react-icons/fa";
 import {
   getDaftarPenghuni,
   tambahPenghuni,
@@ -203,8 +203,8 @@ const Penghuni = () => {
         </button>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between ">
-          <h1 className="text-xl font-bold text-gray-900 ">
-            Daftar penghuni kos :
+          <h1 className="text-2xl font-bold text-gray-900 ">
+            Daftar Penghuni Kos
           </h1>
         </div>
 
@@ -215,7 +215,7 @@ const Penghuni = () => {
             <input
               type="text"
               placeholder="Cari penghuni atau nomor kamar..."
-              className="w-full p-2 pl-3 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -650,6 +650,17 @@ const Penghuni = () => {
             </div>
           </div>
         )}
+
+        {/* Tombol Lihat Daftar Penghuni Lama */}
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={() => router.push("/dashboard/penghuni-lama")}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <FaHistory className="text-gray-600" />
+            Lihat Daftar Penghuni Lama
+          </button>
+        </div>
       </div>
     </div>
   );

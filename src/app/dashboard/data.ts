@@ -220,3 +220,55 @@ export const hapusRiwayatPengeluaran = (id: number) => {
   localStorage.setItem("riwayatPengeluaran", JSON.stringify(updatedData));
   return updatedData;
 };
+
+// Tambahkan state untuk penghuni lama
+let daftarPenghuniLama: PenghuniData[] = [];
+
+// Fungsi untuk menyimpan data penghuni lama ke localStorage
+const savePenghuniLamaToLocalStorage = (data: PenghuniData[]) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("daftarPenghuniLama", JSON.stringify(data));
+  }
+};
+
+// Fungsi untuk mendapatkan data penghuni lama dari localStorage
+const getPenghuniLamaFromLocalStorage = (): PenghuniData[] => {
+  if (typeof window !== "undefined") {
+    const storedData = localStorage.getItem("daftarPenghuniLama");
+    return storedData ? JSON.parse(storedData) : [];
+  }
+  return [];
+};
+
+// Fungsi untuk mengakhiri sewa kos
+export const akhiriSewaKos = (id: number): PenghuniData[] => {
+  const currentData = getDaftarPenghuni();
+  const penghuniIndex = currentData.findIndex((p) => p.id === id);
+
+  if (penghuniIndex !== -1) {
+    const penghuni = currentData[penghuniIndex];
+    // Pindahkan ke daftar penghuni lama
+    const penghuniLama = getPenghuniLamaFromLocalStorage();
+    penghuniLama.push(penghuni);
+    savePenghuniLamaToLocalStorage(penghuniLama);
+
+    // Hapus dari daftar penghuni aktif
+    const updatedData = currentData.filter((p) => p.id !== id);
+    saveDataToLocalStorage(updatedData);
+    return updatedData;
+  }
+  return currentData;
+};
+
+// Fungsi untuk mendapatkan daftar penghuni lama
+export const getDaftarPenghuniLama = (): PenghuniData[] => {
+  return getPenghuniLamaFromLocalStorage();
+};
+
+// Fungsi untuk menghapus data penghuni lama
+export const hapusPenghuniLama = (id: number): PenghuniData[] => {
+  const penghuniLama = getPenghuniLamaFromLocalStorage();
+  const updatedData = penghuniLama.filter((item) => item.id !== id);
+  savePenghuniLamaToLocalStorage(updatedData);
+  return updatedData;
+};
