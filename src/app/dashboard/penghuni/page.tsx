@@ -194,19 +194,13 @@ const Penghuni = () => {
         </button>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between ">
-          <h1 className="text-xl font-bold text-gray-900 mb-4 sm:mb-0">
+          <h1 className="text-xl font-bold text-gray-900 ">
             Daftar penghuni kos :
           </h1>
-          <button
-            onClick={handleTambahPenghuniClick}
-            className="flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-600 font-bold "
-          >
-            <FaPlus className="text-blue-600" /> Tambah Penghuni Baru
-          </button>
         </div>
 
         <div className="mb-6 flex justify-between items-center">
-          <div className="relative w-80">
+          <div className="relative w-full sm:w-80">
             {" "}
             {/* Wider search input */}
             <input
@@ -234,6 +228,12 @@ const Penghuni = () => {
             </span>
           </div>
         </div>
+        <button
+          onClick={handleTambahPenghuniClick}
+          className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-600 font-bold "
+        >
+          <FaPlus className="text-blue-600" /> Tambah Penghuni Baru
+        </button>
 
         <section className="space-y-3">
           {penghuniList.length === 0 ? (
@@ -558,8 +558,7 @@ const Penghuni = () => {
                     htmlFor="nominalPembayaran"
                     className="block text-gray-700 font-medium mb-2"
                   >
-                    Nominal Pembayaran{" "}
-                    <span className="text-gray-400">(Opsional)</span>
+                    Nominal Pembayaran <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"

@@ -177,3 +177,46 @@ export const hapusRiwayatPembayaran = (id: number) => {
   localStorage.setItem("riwayatPembayaran", JSON.stringify(updatedData));
   return updatedData;
 };
+
+export interface RiwayatPengeluaran {
+  id: number;
+  deskripsi: string;
+  jenis: string;
+  tanggal: string;
+  nominal: string;
+}
+
+// Fungsi untuk mendapatkan riwayat pengeluaran
+export const getRiwayatPengeluaran = (): RiwayatPengeluaran[] => {
+  if (typeof window === "undefined") return [];
+
+  const data = localStorage.getItem("riwayatPengeluaran");
+  return data ? JSON.parse(data) : [];
+};
+
+// Fungsi untuk menambah riwayat pengeluaran
+export const tambahRiwayatPengeluaran = (
+  data: Omit<RiwayatPengeluaran, "id">
+) => {
+  const riwayatPengeluaran = getRiwayatPengeluaran();
+  const id =
+    riwayatPengeluaran.length > 0
+      ? Math.max(...riwayatPengeluaran.map((item) => item.id)) + 1
+      : 1;
+
+  const newData = { ...data, id };
+  riwayatPengeluaran.push(newData);
+  localStorage.setItem(
+    "riwayatPengeluaran",
+    JSON.stringify(riwayatPengeluaran)
+  );
+  return riwayatPengeluaran;
+};
+
+// Fungsi untuk menghapus riwayat pengeluaran
+export const hapusRiwayatPengeluaran = (id: number) => {
+  const riwayatPengeluaran = getRiwayatPengeluaran();
+  const updatedData = riwayatPengeluaran.filter((item) => item.id !== id);
+  localStorage.setItem("riwayatPengeluaran", JSON.stringify(updatedData));
+  return updatedData;
+};
