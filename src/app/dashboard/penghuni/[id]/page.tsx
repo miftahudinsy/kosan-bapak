@@ -1,4 +1,3 @@
-// c:\Users\mifta\next-js\bapak-kosan\src\app\dashboard\penghuni\kamar\[id].tsx
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, FormEvent, ChangeEvent } from "react";
@@ -8,13 +7,25 @@ import {
   FaEdit,
   FaCalendarPlus,
   FaTrash,
+  FaMoneyBillWave,
+  FaIdCard,
+  FaPhone,
+  FaAddressBook,
+  FaUser,
 } from "react-icons/fa";
 import {
   getDaftarPenghuni,
   editPenghuni,
   perpanjangKos,
   hapusPenghuni,
+  KontakDaruratType,
 } from "../../data";
+
+interface KontakDarurat {
+  nama: string;
+  tipe: KontakDaruratType;
+  noHP: string;
+}
 
 interface PenghuniData {
   id: number;
@@ -22,6 +33,10 @@ interface PenghuniData {
   noKamar: string;
   tanggalMulai: string;
   tanggalSelesai: string;
+  noHP: string;
+  noKTP?: string;
+  deposit?: string;
+  kontakDarurat?: KontakDarurat;
 }
 
 export default function DetailPenghuni({
@@ -40,6 +55,12 @@ export default function DetailPenghuni({
     noKamar: "",
     tanggalMulai: "",
     tanggalSelesai: "",
+    noHP: "",
+    noKTP: "",
+    deposit: "",
+    kontakDaruratNama: "",
+    kontakDaruratTipe: "",
+    kontakDaruratNoHP: "",
   });
 
   useEffect(() => {
@@ -49,7 +70,18 @@ export default function DetailPenghuni({
     );
     setPenghuni(penghuniData || null);
     if (penghuniData) {
-      setFormData(penghuniData);
+      setFormData({
+        nama: penghuniData.nama || "",
+        noKamar: penghuniData.noKamar || "",
+        tanggalMulai: penghuniData.tanggalMulai || "",
+        tanggalSelesai: penghuniData.tanggalSelesai || "",
+        noHP: penghuniData.noHP || "",
+        noKTP: penghuniData.noKTP || "",
+        deposit: penghuniData.deposit || "",
+        kontakDaruratNama: penghuniData.kontakDarurat?.nama || "",
+        kontakDaruratTipe: penghuniData.kontakDarurat?.tipe || "",
+        kontakDaruratNoHP: penghuniData.kontakDarurat?.noHP || "",
+      });
     }
   }, [resolvedParams.id]);
 
@@ -57,7 +89,11 @@ export default function DetailPenghuni({
     router.back();
   };
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    event: ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
       ...prev,
@@ -68,12 +104,32 @@ export default function DetailPenghuni({
   const handleEditSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (penghuni) {
+      // Persiapkan data kontak darurat
+      let kontakDaruratData: KontakDarurat | undefined;
+
+      // Jika ada data kontak darurat
+      if (
+        formData.kontakDaruratNama ||
+        formData.kontakDaruratTipe ||
+        formData.kontakDaruratNoHP
+      ) {
+        kontakDaruratData = {
+          nama: formData.kontakDaruratNama,
+          tipe: formData.kontakDaruratTipe as KontakDaruratType,
+          noHP: formData.kontakDaruratNoHP,
+        };
+      }
+
       // Edit data penghuni
       const updatedData = editPenghuni(penghuni.id, {
         nama: formData.nama,
         noKamar: formData.noKamar,
         tanggalMulai: formData.tanggalMulai,
         tanggalSelesai: formData.tanggalSelesai,
+        noHP: formData.noHP,
+        noKTP: formData.noKTP,
+        deposit: formData.deposit,
+        kontakDarurat: kontakDaruratData,
       });
 
       // Update state dengan data terbaru
@@ -119,6 +175,35 @@ export default function DetailPenghuni({
     return date.toLocaleDateString("id-ID", options);
   };
 
+  // Fungsi untuk menampilkan kontak darurat
+  const renderKontakDarurat = () => {
+    if (!penghuni?.kontakDarurat) return null;
+
+    const kontakDarurat = penghuni.kontakDarurat;
+    return (
+      <div className="space-y-1">
+        <h2 className="text-gray-600">Kontak Darurat</h2>
+        <div className="space-y-2">
+          {kontakDarurat.nama && (
+            <p className="text-lg font-semibold text-gray-900">
+              {kontakDarurat.nama}
+              {kontakDarurat.tipe && (
+                <span className="ml-2 text-sm bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
+                  {kontakDarurat.tipe}
+                </span>
+              )}
+            </p>
+          )}
+          {kontakDarurat.noHP && (
+            <p className="text-lg font-semibold text-gray-900">
+              {kontakDarurat.noHP}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (!penghuni) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
@@ -161,11 +246,54 @@ export default function DetailPenghuni({
           </div>
 
           <div className="bg-blue-100 rounded-xl p-6 space-y-6">
+            {/* Nama Penghuni */}
             <div className="space-y-1">
               <h2 className="text-gray-600">Nama Penghuni</h2>
               <p className="text-xl font-bold text-blue-800">{penghuni.nama}</p>
             </div>
 
+            {/* Nomor Kamar */}
+            <div className="space-y-1">
+              <h2 className="text-gray-600">Nomor Kamar</h2>
+              <p className="text-lg font-semibold text-gray-900">
+                {penghuni.noKamar}
+              </p>
+            </div>
+
+            {/* Nomor HP */}
+            {penghuni.noHP && (
+              <div className="space-y-1">
+                <h2 className="text-gray-600">Nomor HP</h2>
+                <p className="text-lg font-semibold text-gray-900">
+                  {penghuni.noHP}
+                </p>
+              </div>
+            )}
+
+            {/* Nomor KTP */}
+            {penghuni.noKTP && (
+              <div className="space-y-1">
+                <h2 className="text-gray-600">Nomor KTP</h2>
+                <p className="text-lg font-semibold text-gray-900">
+                  {penghuni.noKTP}
+                </p>
+              </div>
+            )}
+
+            {/* Kontak Darurat */}
+            {renderKontakDarurat()}
+
+            {/* Deposit */}
+            {penghuni.deposit && (
+              <div className="space-y-1">
+                <h2 className="text-gray-600">Deposit</h2>
+                <p className="text-lg font-semibold text-green-600">
+                  {penghuni.deposit}
+                </p>
+              </div>
+            )}
+
+            {/* Tanggal Mulai dan Selesai */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-1">
                 <h2 className="text-gray-600">Tanggal Mulai Kos</h2>
@@ -180,13 +308,6 @@ export default function DetailPenghuni({
                   {formatDate(penghuni.tanggalSelesai)}
                 </p>
               </div>
-            </div>
-
-            <div className="space-y-1">
-              <h2 className="text-gray-600">Nomor Kamar</h2>
-              <p className="text-lg font-semibold text-gray-900">
-                {penghuni.noKamar}
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -245,7 +366,7 @@ export default function DetailPenghuni({
       {/* Modal Edit */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-md w-full mx-4">
+          <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6">Edit Data Penghuni</h2>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
@@ -270,6 +391,94 @@ export default function DetailPenghuni({
                   value={formData.noKamar}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Nomor HP
+                </label>
+                <input
+                  type="text"
+                  name="noHP"
+                  value={formData.noHP}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Nomor KTP
+                </label>
+                <input
+                  type="text"
+                  name="noKTP"
+                  value={formData.noKTP}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Kontak Darurat - Form Fields */}
+              <div className="border border-gray-200 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-800 mb-3">
+                  Kontak Darurat
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-gray-700 text-sm mb-1">
+                      Nama
+                    </label>
+                    <input
+                      type="text"
+                      name="kontakDaruratNama"
+                      value={formData.kontakDaruratNama}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm mb-1">
+                      Hubungan
+                    </label>
+                    <select
+                      name="kontakDaruratTipe"
+                      value={formData.kontakDaruratTipe}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Pilih Hubungan</option>
+                      <option value={KontakDaruratType.ORANG_TUA}>
+                        Orang Tua
+                      </option>
+                      <option value={KontakDaruratType.WALI}>Wali</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm mb-1">
+                      Nomor HP
+                    </label>
+                    <input
+                      type="text"
+                      name="kontakDaruratNoHP"
+                      value={formData.kontakDaruratNoHP}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Deposit
+                </label>
+                <input
+                  type="text"
+                  name="deposit"
+                  value={formData.deposit}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contoh: 500000"
                 />
               </div>
               <div>
@@ -320,11 +529,11 @@ export default function DetailPenghuni({
       {isPerpanjangModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
           <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6">Perpanjang Masa Kos</h2>
+            <h2 className="text-2xl font-bold mb-6">Perpanjang Kos</h2>
             <form onSubmit={handlePerpanjangSubmit} className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Tanggal Selesai Baru
+                  Perpanjang sampai tanggal
                 </label>
                 <input
                   type="date"

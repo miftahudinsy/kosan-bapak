@@ -1,17 +1,14 @@
-// c:\Users\mifta\next-js\bapak-kosan\src\app\dashboard\penghuni\page.tsx
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { FaBed, FaArrowLeft, FaPlus } from "react-icons/fa";
-import { getDaftarPenghuni, tambahPenghuni } from "../data";
-
-interface PenghuniData {
-  id: number;
-  nama: string;
-  noKamar: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-}
+import {
+  getDaftarPenghuni,
+  tambahPenghuni,
+  PenghuniData,
+  KontakDaruratType,
+  formatCurrency,
+} from "../data";
 
 const Penghuni = () => {
   const router = useRouter();
@@ -19,14 +16,24 @@ const Penghuni = () => {
   const [formData, setFormData] = useState({
     nama: "",
     noKamar: "",
+    noHP: "",
+    noKTP: "",
+    kontakDarurat: {
+      nama: "",
+      tipe: KontakDaruratType.ORANG_TUA,
+      noHP: "",
+    },
+    deposit: "",
     tanggalMulai: "",
     tanggalSelesai: "",
   });
   const [penghuniList, setPenghuniList] = useState<PenghuniData[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
+  // Load data from localStorage on component mount
   useEffect(() => {
-    const data = getDaftarPenghuni();
-    setPenghuniList(data);
+    const loadedData = getDaftarPenghuni();
+    setPenghuniList(loadedData);
   }, []);
 
   const handleKamarClick = (id: number) => {
@@ -46,30 +53,62 @@ const Penghuni = () => {
     setFormData({
       nama: "",
       noKamar: "",
+      noHP: "",
+      noKTP: "",
+      kontakDarurat: {
+        nama: "",
+        tipe: KontakDaruratType.ORANG_TUA,
+        noHP: "",
+      },
+      deposit: "",
       tanggalMulai: "",
       tanggalSelesai: "",
     });
   };
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = event.target;
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [name]: value,
-    }));
+
+    // Handle nested kontakDarurat fields
+    if (name.startsWith("kontakDarurat.")) {
+      const kontakField = name.split(".")[1];
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        kontakDarurat: {
+          ...prevFormData.kontakDarurat,
+          [kontakField]: value,
+        },
+      }));
+    } else {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    // Menambahkan data baru ke daftarPenghuni
-    tambahPenghuni(formData);
+    // Convert string values to appropriate types
+    const penghuniData = {
+      ...formData,
+      noHP: parseInt(formData.noHP, 10),
+      kontakDarurat: {
+        ...formData.kontakDarurat,
+        noHP: parseInt(formData.kontakDarurat.noHP, 10),
+      },
+    };
 
-    // update list data
-    const updatedData = getDaftarPenghuni();
+    // Add new penghuni using the tambahPenghuni function
+    const updatedData = tambahPenghuni(penghuniData);
+
+    // Update the UI with the new data
     setPenghuniList(updatedData);
 
-    // Menutup Modal
+    // Close the modal
     handleCloseModal();
   };
 
@@ -105,69 +144,127 @@ const Penghuni = () => {
           </button>
         </div>
 
-        <section className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {penghuniList.map((penghuni) => (
-              <button
-                key={penghuni.id}
-                onClick={() => handleKamarClick(penghuni.id)}
-                className="bg-blue-100 hover:bg-blue-200 p-5 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105"
+        <div className="mb-6 flex justify-between items-center">
+          <div className="relative w-80">
+            {" "}
+            {/* Wider search input */}
+            <input
+              type="text"
+              placeholder="Cari penghuni atau nomor kamar..."
+              className="w-full p-2 pl-3 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className="absolute right-3 top-2.5 text-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <div className="flex items-center justify-between">
-                  <div className="text-left space-y-2">
-                    <h3 className="text-xl font-bold text-blue-800">
-                      {penghuni.nama}
-                    </h3>
-                    <p className="text-gray-600">
-                      Kos sampai :{" "}
-                      <span className="font-medium">
-                        {formatDate(penghuni.tanggalSelesai)}
-                      </span>
-                    </p>
-                    {(() => {
-                      const today = new Date();
-                      const selesaiDate = new Date(penghuni.tanggalSelesai);
-                      const diffTime = selesaiDate.getTime() - today.getTime();
-                      const diffDays = Math.ceil(
-                        diffTime / (1000 * 60 * 60 * 24)
-                      );
-
-                      if (diffDays >= 0) {
-                        return (
-                          <p className="text-gray-600">
-                            Sisa{" "}
-                            <span className="font-medium">
-                              {diffDays} hari lagi
-                            </span>
-                          </p>
-                        );
-                      } else {
-                        return (
-                          <p className="text-red-600 font-medium">
-                            Terlambat! Sudah lewat{" "}
-                            <span className="font-medium">
-                              {Math.abs(diffDays)} hari
-                            </span>
-                          </p>
-                        );
-                      }
-                    })()}
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <FaBed className="text-3xl text-blue-600 mb-1" />
-                    <span className="text-2xl font-bold text-blue-700">
-                      {penghuni.noKamar}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </span>
           </div>
+        </div>
+
+        <section className="space-y-3">
+          {penghuniList.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="flex justify-center mb-4">
+                <FaBed className="text-gray-400 text-5xl" />
+              </div>
+              <p className="text-gray-500 text-lg">
+                Belum ada data penghuni. Silakan tambahkan penghuni baru.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {penghuniList
+                .filter(
+                  (penghuni) =>
+                    penghuni.nama
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()) ||
+                    penghuni.noKamar
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+                )
+                .sort(
+                  (a, b) =>
+                    new Date(a.tanggalSelesai).getTime() -
+                    new Date(b.tanggalSelesai).getTime()
+                ) // Sort by tanggalSelesai
+                .map((penghuni) => (
+                  <button
+                    key={penghuni.id}
+                    onClick={() => handleKamarClick(penghuni.id)}
+                    className="bg-blue-100 hover:bg-blue-200 p-5 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="text-left space-y-2">
+                        <h3 className="text-xl font-bold text-blue-800">
+                          {penghuni.nama}
+                        </h3>
+
+                        <p className="text-gray-600">
+                          Kos sampai:{" "}
+                          <span className="font-medium">
+                            {formatDate(penghuni.tanggalSelesai)}
+                          </span>
+                        </p>
+                        {(() => {
+                          const today = new Date();
+                          const selesaiDate = new Date(penghuni.tanggalSelesai);
+                          const diffTime =
+                            selesaiDate.getTime() - today.getTime();
+                          const diffDays = Math.ceil(
+                            diffTime / (1000 * 60 * 60 * 24)
+                          );
+
+                          if (diffDays >= 0) {
+                            return (
+                              <p className="text-gray-600">
+                                Sisa{" "}
+                                <span className="font-medium">
+                                  {diffDays} hari lagi
+                                </span>
+                              </p>
+                            );
+                          } else {
+                            return (
+                              <p className="text-red-600 font-medium">
+                                Terlambat! Sudah lewat{" "}
+                                <span className="font-medium">
+                                  {Math.abs(diffDays)} hari
+                                </span>
+                              </p>
+                            );
+                          }
+                        })()}
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <FaBed className="text-3xl text-blue-600 mb-1" />
+                        <span className="text-2xl font-bold text-blue-700">
+                          {penghuni.noKamar}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+            </div>
+          )}
         </section>
 
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
-            <div className="bg-white p-8 rounded-xl shadow-lg relative">
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <button
                 onClick={handleCloseModal}
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -190,13 +287,17 @@ const Penghuni = () => {
               <h2 className="text-2xl font-bold mb-6 text-center">
                 Tambah Penghuni Baru
               </h2>
-              <form onSubmit={handleSubmit}>
+              <form
+                onSubmit={handleSubmit}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                {/* Nama */}
                 <div className="mb-4">
                   <label
                     htmlFor="nama"
                     className="block text-gray-700 font-medium mb-2"
                   >
-                    Nama
+                    Nama <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -209,12 +310,14 @@ const Penghuni = () => {
                     required
                   />
                 </div>
+
+                {/* Nomor Kamar */}
                 <div className="mb-4">
                   <label
                     htmlFor="noKamar"
                     className="block text-gray-700 font-medium mb-2"
                   >
-                    Nomor Kamar
+                    Nomor Kamar <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -227,12 +330,136 @@ const Penghuni = () => {
                     required
                   />
                 </div>
+
+                {/* Nomor HP */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="noHP"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Nomor HP <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="noHP"
+                    name="noHP"
+                    value={formData.noHP}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan Nomor HP"
+                    required
+                  />
+                </div>
+
+                {/* Nomor KTP (Opsional) */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="noKTP"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Nomor KTP <span className="text-gray-400">(Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="noKTP"
+                    name="noKTP"
+                    value={formData.noKTP}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan Nomor KTP"
+                  />
+                </div>
+
+                {/* Kontak Darurat - Nama */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="kontakDarurat.nama"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Nama Kontak Darurat <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="kontakDarurat.nama"
+                    name="kontakDarurat.nama"
+                    value={formData.kontakDarurat.nama}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan Nama Kontak Darurat"
+                    required
+                  />
+                </div>
+
+                {/* Kontak Darurat - Tipe */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="kontakDarurat.tipe"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Tipe Kontak Darurat <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="kontakDarurat.tipe"
+                    name="kontakDarurat.tipe"
+                    value={formData.kontakDarurat.tipe}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value={KontakDaruratType.ORANG_TUA}>
+                      Orang Tua
+                    </option>
+                    <option value={KontakDaruratType.WALI}>Wali</option>
+                  </select>
+                </div>
+
+                {/* Kontak Darurat - Nomor HP */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="kontakDarurat.noHP"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Nomor HP Kontak Darurat{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="kontakDarurat.noHP"
+                    name="kontakDarurat.noHP"
+                    value={formData.kontakDarurat.noHP}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan Nomor HP Kontak Darurat"
+                    required
+                  />
+                </div>
+
+                {/* Deposit (Opsional) */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="deposit"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Deposit <span className="text-gray-400">(Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="deposit"
+                    name="deposit"
+                    value={formData.deposit}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Contoh: 300000"
+                  />
+                </div>
+
+                {/* Tanggal Mulai */}
                 <div className="mb-4">
                   <label
                     htmlFor="tanggalMulai"
                     className="block text-gray-700 font-medium mb-2"
                   >
-                    Tanggal Mulai Kos
+                    Tanggal Mulai Kos <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -244,12 +471,14 @@ const Penghuni = () => {
                     required
                   />
                 </div>
-                <div className="mb-6">
+
+                {/* Tanggal Selesai */}
+                <div className="mb-4">
                   <label
                     htmlFor="tanggalSelesai"
                     className="block text-gray-700 font-medium mb-2"
                   >
-                    Kos Sampai Tanggal
+                    Kos Sampai Tanggal <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -261,12 +490,16 @@ const Penghuni = () => {
                     required
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full w-full"
-                >
-                  Simpan
-                </button>
+
+                {/* Submit Button - Full Width */}
+                <div className="col-span-1 md:col-span-2 mt-4">
+                  <button
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full w-full"
+                  >
+                    Simpan
+                  </button>
+                </div>
               </form>
             </div>
           </div>
