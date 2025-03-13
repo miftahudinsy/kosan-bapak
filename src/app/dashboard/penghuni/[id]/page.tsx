@@ -7,11 +7,6 @@ import {
   FaEdit,
   FaCalendarPlus,
   FaTrash,
-  FaMoneyBillWave,
-  FaIdCard,
-  FaPhone,
-  FaAddressBook,
-  FaUser,
 } from "react-icons/fa";
 import {
   getDaftarPenghuni,

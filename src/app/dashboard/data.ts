@@ -73,7 +73,7 @@ export const tambahPenghuni = (dataPenghuni: Omit<PenghuniData, "id">) => {
   const newId = lastId + 1;
 
   // Format deposit jika ada
-  let formattedData = { ...dataPenghuni };
+  const formattedData = { ...dataPenghuni };
   if (
     formattedData.deposit &&
     typeof formattedData.deposit === "string" &&
@@ -98,7 +98,7 @@ export const editPenghuni = (
   const currentData = getDaftarPenghuni();
 
   // Format deposit jika ada
-  let formattedData = { ...data };
+  const formattedData = { ...data };
   if (
     formattedData.deposit &&
     typeof formattedData.deposit === "string" &&
