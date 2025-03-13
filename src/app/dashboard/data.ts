@@ -137,3 +137,43 @@ export const getPenghuniById = (id: number): PenghuniData | undefined => {
   const currentData = getDaftarPenghuni();
   return currentData.find((item) => item.id === id);
 };
+
+export interface RiwayatPembayaran {
+  id: number;
+  idPenghuni: number;
+  tanggal: string;
+  nominal: string;
+  jenis: "Pembayaran Awal" | "Perpanjangan";
+}
+
+// Fungsi untuk mendapatkan riwayat pembayaran
+export const getRiwayatPembayaran = (): RiwayatPembayaran[] => {
+  if (typeof window === "undefined") return [];
+
+  const data = localStorage.getItem("riwayatPembayaran");
+  return data ? JSON.parse(data) : [];
+};
+
+// Fungsi untuk menambah riwayat pembayaran
+export const tambahRiwayatPembayaran = (
+  data: Omit<RiwayatPembayaran, "id">
+) => {
+  const riwayatPembayaran = getRiwayatPembayaran();
+  const id =
+    riwayatPembayaran.length > 0
+      ? Math.max(...riwayatPembayaran.map((item) => item.id)) + 1
+      : 1;
+
+  const newData = { ...data, id };
+  riwayatPembayaran.push(newData);
+  localStorage.setItem("riwayatPembayaran", JSON.stringify(riwayatPembayaran));
+  return riwayatPembayaran;
+};
+
+// Fungsi untuk menghapus riwayat pembayaran
+export const hapusRiwayatPembayaran = (id: number) => {
+  const riwayatPembayaran = getRiwayatPembayaran();
+  const updatedData = riwayatPembayaran.filter((item) => item.id !== id);
+  localStorage.setItem("riwayatPembayaran", JSON.stringify(updatedData));
+  return updatedData;
+};

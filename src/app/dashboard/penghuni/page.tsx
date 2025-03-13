@@ -5,27 +5,58 @@ import { FaBed, FaArrowLeft, FaPlus } from "react-icons/fa";
 import {
   getDaftarPenghuni,
   tambahPenghuni,
-  PenghuniData,
-  KontakDaruratType,
   formatCurrency,
+  tambahRiwayatPembayaran,
+  KontakDaruratType,
 } from "../data";
+
+interface KontakDarurat {
+  nama: string;
+  tipe: KontakDaruratType;
+  noHP: string;
+}
+
+interface PenghuniData {
+  id: number;
+  nama: string;
+  noKamar: string;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+  noHP: string;
+  noKTP?: string;
+  deposit?: string;
+  kontakDarurat?: KontakDarurat;
+}
+
+interface FormData {
+  nama: string;
+  noKamar: string;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+  noHP: string;
+  noKTP: string;
+  deposit: string;
+  kontakDaruratNama: string;
+  kontakDaruratTipe: string;
+  kontakDaruratNoHP: string;
+  nominalPembayaran: string;
+}
 
 const Penghuni = () => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     nama: "",
     noKamar: "",
-    noHP: "",
-    noKTP: "",
-    kontakDarurat: {
-      nama: "",
-      tipe: KontakDaruratType.ORANG_TUA,
-      noHP: "",
-    },
-    deposit: "",
     tanggalMulai: "",
     tanggalSelesai: "",
+    noHP: "",
+    noKTP: "",
+    deposit: "",
+    kontakDaruratNama: "",
+    kontakDaruratTipe: "",
+    kontakDaruratNoHP: "",
+    nominalPembayaran: "",
   });
   const [penghuniList, setPenghuniList] = useState<PenghuniData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,16 +84,15 @@ const Penghuni = () => {
     setFormData({
       nama: "",
       noKamar: "",
-      noHP: "",
-      noKTP: "",
-      kontakDarurat: {
-        nama: "",
-        tipe: KontakDaruratType.ORANG_TUA,
-        noHP: "",
-      },
-      deposit: "",
       tanggalMulai: "",
       tanggalSelesai: "",
+      noHP: "",
+      noKTP: "",
+      deposit: "",
+      kontakDaruratNama: "",
+      kontakDaruratTipe: "",
+      kontakDaruratNoHP: "",
+      nominalPembayaran: "",
     });
   };
 
@@ -70,46 +100,77 @@ const Penghuni = () => {
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
-
-    // Handle nested kontakDarurat fields
-    if (name.startsWith("kontakDarurat.")) {
-      const kontakField = name.split(".")[1];
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        kontakDarurat: {
-          ...prevFormData.kontakDarurat,
-          [kontakField]: value,
-        },
-      }));
-    } else {
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        [name]: value,
-      }));
-    }
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    // Convert string values to appropriate types
-    const penghuniData = {
-      ...formData,
-      noHP: parseInt(formData.noHP, 10),
-      kontakDarurat: {
-        ...formData.kontakDarurat,
-        noHP: parseInt(formData.kontakDarurat.noHP, 10),
-      },
-    };
+    // Persiapkan data kontak darurat
+    let kontakDaruratData: KontakDarurat | undefined;
 
-    // Add new penghuni using the tambahPenghuni function
-    const updatedData = tambahPenghuni(penghuniData);
+    // Jika ada data kontak darurat
+    if (
+      formData.kontakDaruratNama &&
+      formData.kontakDaruratTipe &&
+      formData.kontakDaruratNoHP
+    ) {
+      kontakDaruratData = {
+        nama: formData.kontakDaruratNama,
+        tipe: formData.kontakDaruratTipe as KontakDaruratType,
+        noHP: formData.kontakDaruratNoHP,
+      };
+    }
+
+    // Tambah data penghuni
+    const updatedData = tambahPenghuni({
+      nama: formData.nama,
+      noKamar: formData.noKamar,
+      tanggalMulai: formData.tanggalMulai,
+      tanggalSelesai: formData.tanggalSelesai,
+      noHP: formData.noHP,
+      noKTP: formData.noKTP,
+      deposit: formData.deposit,
+      kontakDarurat: kontakDaruratData || {
+        nama: "",
+        tipe: KontakDaruratType.ORANG_TUA,
+        noHP: "",
+      },
+    });
+
+    // Tambah riwayat pembayaran
+    if (formData.nominalPembayaran) {
+      const newPenghuni = updatedData[updatedData.length - 1];
+      tambahRiwayatPembayaran({
+        idPenghuni: newPenghuni.id,
+        tanggal: new Date().toISOString(),
+        nominal: formatCurrency(formData.nominalPembayaran),
+        jenis: "Pembayaran Awal",
+      });
+    }
 
     // Update the UI with the new data
     setPenghuniList(updatedData);
 
-    // Close the modal
-    handleCloseModal();
+    // Reset form
+    setFormData({
+      nama: "",
+      noKamar: "",
+      tanggalMulai: "",
+      tanggalSelesai: "",
+      noHP: "",
+      noKTP: "",
+      deposit: "",
+      kontakDaruratNama: "",
+      kontakDaruratTipe: "",
+      kontakDaruratNoHP: "",
+      nominalPembayaran: "",
+    });
+
+    setIsModalOpen(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -373,16 +434,16 @@ const Penghuni = () => {
                 {/* Kontak Darurat - Nama */}
                 <div className="mb-4">
                   <label
-                    htmlFor="kontakDarurat.nama"
+                    htmlFor="kontakDaruratNama"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nama Kontak Darurat <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="kontakDarurat.nama"
-                    name="kontakDarurat.nama"
-                    value={formData.kontakDarurat.nama}
+                    id="kontakDaruratNama"
+                    name="kontakDaruratNama"
+                    value={formData.kontakDaruratNama}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nama Kontak Darurat"
@@ -393,15 +454,15 @@ const Penghuni = () => {
                 {/* Kontak Darurat - Tipe */}
                 <div className="mb-4">
                   <label
-                    htmlFor="kontakDarurat.tipe"
+                    htmlFor="kontakDaruratTipe"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Tipe Kontak Darurat <span className="text-red-500">*</span>
                   </label>
                   <select
-                    id="kontakDarurat.tipe"
-                    name="kontakDarurat.tipe"
-                    value={formData.kontakDarurat.tipe}
+                    id="kontakDaruratTipe"
+                    name="kontakDaruratTipe"
+                    value={formData.kontakDaruratTipe}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
@@ -416,7 +477,7 @@ const Penghuni = () => {
                 {/* Kontak Darurat - Nomor HP */}
                 <div className="mb-4">
                   <label
-                    htmlFor="kontakDarurat.noHP"
+                    htmlFor="kontakDaruratNoHP"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nomor HP Kontak Darurat{" "}
@@ -424,9 +485,9 @@ const Penghuni = () => {
                   </label>
                   <input
                     type="text"
-                    id="kontakDarurat.noHP"
-                    name="kontakDarurat.noHP"
-                    value={formData.kontakDarurat.noHP}
+                    id="kontakDaruratNoHP"
+                    name="kontakDaruratNoHP"
+                    value={formData.kontakDaruratNoHP}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nomor HP Kontak Darurat"
@@ -449,7 +510,7 @@ const Penghuni = () => {
                     value={formData.deposit}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: 300000"
+                    placeholder="Contoh: 300.000"
                   />
                 </div>
 
@@ -488,6 +549,27 @@ const Penghuni = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
+                  />
+                </div>
+
+                {/* Nominal Pembayaran */}
+                <div className="mb-4">
+                  <label
+                    htmlFor="nominalPembayaran"
+                    className="block text-gray-700 font-medium mb-2"
+                  >
+                    Nominal Pembayaran{" "}
+                    <span className="text-gray-400">(Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="nominalPembayaran"
+                    name="nominalPembayaran"
+                    value={formData.nominalPembayaran}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    placeholder="Contoh: 1.200.000"
                   />
                 </div>
 

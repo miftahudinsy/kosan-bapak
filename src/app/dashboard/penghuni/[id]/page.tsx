@@ -19,6 +19,8 @@ import {
   perpanjangKos,
   hapusPenghuni,
   KontakDaruratType,
+  tambahRiwayatPembayaran,
+  formatCurrency,
 } from "../../data";
 
 interface KontakDarurat {
@@ -61,6 +63,7 @@ export default function DetailPenghuni({
     kontakDaruratNama: "",
     kontakDaruratTipe: "",
     kontakDaruratNoHP: "",
+    nominalPembayaran: "",
   });
 
   useEffect(() => {
@@ -81,6 +84,7 @@ export default function DetailPenghuni({
         kontakDaruratNama: penghuniData.kontakDarurat?.nama || "",
         kontakDaruratTipe: penghuniData.kontakDarurat?.tipe || "",
         kontakDaruratNoHP: penghuniData.kontakDarurat?.noHP || "",
+        nominalPembayaran: "",
       });
     }
   }, [resolvedParams.id]);
@@ -146,6 +150,16 @@ export default function DetailPenghuni({
     if (penghuni) {
       // Perpanjang masa kos
       const updatedData = perpanjangKos(penghuni.id, formData.tanggalSelesai);
+
+      // Tambah riwayat pembayaran
+      if (formData.nominalPembayaran) {
+        tambahRiwayatPembayaran({
+          idPenghuni: penghuni.id,
+          tanggal: new Date().toISOString(),
+          nominal: formatCurrency(formData.nominalPembayaran),
+          jenis: "Perpanjangan",
+        });
+      }
 
       // Update state dengan data terbaru
       const updatedPenghuni = updatedData.find((p) => p.id === penghuni.id);
@@ -342,16 +356,16 @@ export default function DetailPenghuni({
           {/* Tombol Aksi */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
             <button
-              onClick={() => setIsEditModalOpen(true)}
-              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-5 rounded-lg font-medium transition-colors"
-            >
-              <FaEdit /> Edit Data
-            </button>
-            <button
               onClick={() => setIsPerpanjangModalOpen(true)}
               className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-5 rounded-lg font-medium transition-colors"
             >
               <FaCalendarPlus /> Perpanjang Kos
+            </button>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-5 rounded-lg font-medium transition-colors"
+            >
+              <FaEdit /> Edit Data
             </button>
             <button
               onClick={() => setIsDeleteModalOpen(true)}
@@ -478,7 +492,7 @@ export default function DetailPenghuni({
                   value={formData.deposit}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Contoh: 500000"
+                  placeholder="Contoh: 300.000"
                 />
               </div>
               <div>
@@ -533,7 +547,7 @@ export default function DetailPenghuni({
             <form onSubmit={handlePerpanjangSubmit} className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
-                  Perpanjang sampai tanggal
+                  Tanggal Selesai Kos
                 </label>
                 <input
                   type="date"
@@ -541,6 +555,19 @@ export default function DetailPenghuni({
                   value={formData.tanggalSelesai}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Nominal Pembayaran
+                </label>
+                <input
+                  type="text"
+                  name="nominalPembayaran"
+                  value={formData.nominalPembayaran}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contoh: 1.200.000"
                 />
               </div>
               <div className="flex gap-4">
