@@ -230,7 +230,7 @@ const Penghuni = () => {
         </div>
         <button
           onClick={handleTambahPenghuniClick}
-          className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-600 font-bold "
+          className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-500 font-bold "
         >
           <FaPlus className="text-blue-600" /> Tambah Penghuni Baru
         </button>

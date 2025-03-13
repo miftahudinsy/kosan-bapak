@@ -144,13 +144,13 @@ const Keuangan = () => {
         </button>
 
         <div className="flex justify-center mb-8">
-          <div className="flex space-x-2 bg-gray-100 p-1.5 rounded-full">
+          <div className="flex space-x-2 bg-blue-50 p-1.5 rounded-full">
             <button
               onClick={() => setActiveTab("pemasukan")}
-              className={`px-4 py-2 rounded-full font-semibold transition-all ${
+              className={`px-4 py-4 rounded-full font-semibold transition-all ${
                 activeTab === "pemasukan"
                   ? "bg-white text-black shadow-md"
-                  : "text-gray-500"
+                  : "text-gray-600"
               }`}
             >
               Pemasukan
@@ -160,7 +160,7 @@ const Keuangan = () => {
               className={`px-4 py-2 rounded-full font-semibold transition-all ${
                 activeTab === "pengeluaran"
                   ? "bg-white text-black shadow-md"
-                  : "text-gray-500"
+                  : "text-gray-600"
               }`}
             >
               Pengeluaran
@@ -277,7 +277,7 @@ const Keuangan = () => {
             <div className="flex justify-end mb-6">
               <button
                 onClick={handleTambahPengeluaranClick}
-                className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-600 font-bold"
+                className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-500 font-bold"
               >
                 <FaPlus className="text-blue-600" /> Tambah Pengeluaran Baru
               </button>
