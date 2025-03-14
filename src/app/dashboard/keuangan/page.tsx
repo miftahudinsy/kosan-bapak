@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChartData, ChartOptions, TooltipItem } from "chart.js";
 import {
   FaArrowLeft,
   FaTrash,
@@ -22,26 +21,6 @@ import {
   getDaftarPenghuniLama,
 } from "../data";
 import { RiwayatPembayaran } from "../data";
-import dynamic from "next/dynamic";
-
-// Dynamic import untuk chart components
-const ChartComponent = dynamic(() => import("./ChartComponent"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-    </div>
-  ),
-});
-
-const PieChartComponent = dynamic(() => import("./PieChartComponent"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-    </div>
-  ),
-});
 
 const Keuangan = () => {
   const router = useRouter();
@@ -83,181 +62,6 @@ const Keuangan = () => {
   });
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [chartData, setChartData] = useState<ChartData<"line">>({
-    labels: [],
-    datasets: [
-      {
-        label: "Pemasukan",
-        data: [],
-        borderColor: "#10B981",
-        backgroundColor: "rgba(16, 185, 129, 0.1)",
-        tension: 0.3,
-        borderWidth: 2,
-        pointBackgroundColor: "#10B981",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: "Pengeluaran",
-        data: [],
-        borderColor: "#EF4444",
-        backgroundColor: "rgba(239, 68, 68, 0.1)",
-        tension: 0.3,
-        borderWidth: 2,
-        pointBackgroundColor: "#EF4444",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-    ],
-  });
-
-  const chartOptions: ChartOptions<"line"> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      intersect: false,
-      mode: "index" as const,
-    },
-    plugins: {
-      legend: {
-        position: "top" as const,
-        align: "end" as const,
-        labels: {
-          usePointStyle: true,
-          padding: 20,
-          font: {
-            size: 12,
-          },
-          color: "#6B7280",
-        },
-      },
-      title: {
-        display: false,
-      },
-      tooltip: {
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-        titleColor: "#111827",
-        bodyColor: "#4B5563",
-        borderColor: "#E5E7EB",
-        borderWidth: 1,
-        padding: 12,
-        usePointStyle: true,
-        callbacks: {
-          label: function (tooltipItem: TooltipItem<"line">): string {
-            const label = tooltipItem.dataset.label || "";
-            const value = tooltipItem.raw as number;
-            return `${label}: ${formatStatisticCurrency(value)}`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          color: "#6B7280",
-          font: {
-            size: 12,
-          },
-        },
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: "#F3F4F6",
-        },
-        ticks: {
-          color: "#6B7280",
-          font: {
-            size: 12,
-          },
-          callback: function (value: number | string): string {
-            return formatStatisticCurrency(value);
-          },
-        },
-      },
-    },
-  };
-
-  const [pieChartData, setPieChartData] = useState<ChartData<"pie">>({
-    labels: [],
-    datasets: [
-      {
-        data: [],
-        backgroundColor: [
-          "#10B981", // Emerald
-          "#3B82F6", // Blue
-          "#F59E0B", // Amber
-          "#EF4444", // Red
-          "#8B5CF6", // Purple
-          "#EC4899", // Pink
-          "#6366F1", // Indigo
-          "#14B8A6", // Teal
-        ],
-        borderWidth: 1,
-      },
-    ],
-  });
-
-  const pieChartOptions: ChartOptions<"pie"> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "right" as const,
-        labels: {
-          font: {
-            size: 12,
-          },
-          color: "#6B7280",
-          padding: 20,
-        },
-      },
-      tooltip: {
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-        titleColor: "#111827",
-        bodyColor: "#4B5563",
-        borderColor: "#E5E7EB",
-        borderWidth: 1,
-        padding: 12,
-        usePointStyle: true,
-        callbacks: {
-          label: function (tooltipItem: TooltipItem<"pie">): string {
-            const label = tooltipItem.label || "";
-            const value = tooltipItem.raw as number;
-            return `${label}: ${formatStatisticCurrency(value)}`;
-          },
-        },
-      },
-    },
-  };
-
-  // Format currency khusus untuk statistik dan grafik
-  const formatStatisticCurrency = (amount: number | string): string => {
-    if (typeof amount === "string") {
-      amount = parseInt(amount.replace(/\D/g, ""), 10);
-    }
-    if (isNaN(amount)) {
-      return "Rp0,-";
-    }
-    // Membulatkan ke ribuan terdekat
-    const roundedAmount = Math.round(amount / 1000) * 1000;
-    return `Rp${roundedAmount
-      .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
-  };
-
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   // Load initial data
   useEffect(() => {
@@ -270,16 +74,6 @@ const Keuangan = () => {
     setPenghuni(dataPenghuni);
     setPenghuniLama(dataPenghuniLama);
   }, []);
-
-  // Helper function untuk memastikan nilai numerik valid
-  const ensureNumber = (value: string | number): number => {
-    if (typeof value === "string") {
-      // Hapus semua karakter non-numerik
-      const numericValue = value.replace(/\D/g, "");
-      return parseInt(numericValue, 10) || 0;
-    }
-    return value || 0;
-  };
 
   // Calculate statistics when data changes
   useEffect(() => {
@@ -383,152 +177,30 @@ const Keuangan = () => {
     });
   }, [riwayatPembayaran, riwayatPengeluaran, penghuni]);
 
-  // Process data for chart
-  useEffect(() => {
-    const bulanIni = new Date().getMonth();
-    const tahunIni = new Date().getFullYear();
-
-    // Get last 6 months
-    const labels = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date(tahunIni, bulanIni - i, 1);
-      return date.toLocaleDateString("id-ID", {
-        month: "short",
-        year: "numeric",
-      });
-    }).reverse();
-
-    // Calculate monthly totals
-    const monthlyData = labels.map((_, index) => {
-      const targetMonth = new Date(tahunIni, bulanIni - (5 - index), 1);
-      const targetMonthEnd = new Date(tahunIni, bulanIni - (5 - index) + 1, 0);
-
-      const pemasukanBulanan = riwayatPembayaran
-        .filter((p) => {
-          const tanggalPembayaran = new Date(p.tanggal);
-          return (
-            tanggalPembayaran >= targetMonth &&
-            tanggalPembayaran <= targetMonthEnd
-          );
-        })
-        .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
-
-      const pengeluaranBulanan = riwayatPengeluaran
-        .filter((p) => {
-          const tanggalPengeluaran = new Date(p.tanggal);
-          return (
-            tanggalPengeluaran >= targetMonth &&
-            tanggalPengeluaran <= targetMonthEnd
-          );
-        })
-        .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
-
-      return { pemasukan: pemasukanBulanan, pengeluaran: pengeluaranBulanan };
-    });
-
-    // Pastikan data tidak undefined atau null
-    const validPemasukan = monthlyData.map((d) => d.pemasukan || 0);
-    const validPengeluaran = monthlyData.map((d) => d.pengeluaran || 0);
-
-    setChartData({
-      labels,
-      datasets: [
-        {
-          label: "Pemasukan",
-          data: validPemasukan,
-          borderColor: "#10B981",
-          backgroundColor: "rgba(16, 185, 129, 0.1)",
-          tension: 0.3,
-          borderWidth: 2,
-          pointBackgroundColor: "#10B981",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-        },
-        {
-          label: "Pengeluaran",
-          data: validPengeluaran,
-          borderColor: "#EF4444",
-          backgroundColor: "rgba(239, 68, 68, 0.1)",
-          tension: 0.3,
-          borderWidth: 2,
-          pointBackgroundColor: "#EF4444",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-        },
-      ],
-    });
-  }, [riwayatPembayaran, riwayatPengeluaran]);
-
-  // Tambahkan useEffect untuk mengupdate pie chart
-  useEffect(() => {
-    if (riwayatPengeluaran.length === 0) {
-      setPieChartData({
-        labels: [],
-        datasets: [
-          {
-            data: [],
-            backgroundColor: [
-              "#10B981",
-              "#3B82F6",
-              "#F59E0B",
-              "#EF4444",
-              "#8B5CF6",
-              "#EC4899",
-              "#6366F1",
-              "#14B8A6",
-            ],
-            borderWidth: 1,
-          },
-        ],
-      });
-      return;
+  // Format currency khusus untuk statistik
+  const formatStatisticCurrency = (amount: number | string): string => {
+    if (typeof amount === "string") {
+      amount = parseInt(amount.replace(/\D/g, ""), 10);
     }
+    if (isNaN(amount)) {
+      return "Rp0,-";
+    }
+    // Membulatkan ke ribuan terdekat
+    const roundedAmount = Math.round(amount / 1000) * 1000;
+    return `Rp${roundedAmount
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
+  };
 
-    const bulanIni = new Date().getMonth();
-    const tahunIni = new Date().getFullYear();
-
-    // Filter pengeluaran bulan ini
-    const pengeluaranBulanIni = riwayatPengeluaran.filter((p) => {
-      const tanggal = new Date(p.tanggal);
-      return (
-        tanggal.getMonth() === bulanIni && tanggal.getFullYear() === tahunIni
-      );
-    });
-
-    // Hitung total per kategori
-    const kategoriTotal = pengeluaranBulanIni.reduce((acc, curr) => {
-      const nominal = ensureNumber(curr.nominal);
-      acc[curr.jenis] = (acc[curr.jenis] || 0) + nominal;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Siapkan data untuk pie chart
-    const labels = Object.keys(kategoriTotal);
-    const data = Object.values(kategoriTotal);
-
-    setPieChartData({
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: [
-            "#10B981",
-            "#3B82F6",
-            "#F59E0B",
-            "#EF4444",
-            "#8B5CF6",
-            "#EC4899",
-            "#6366F1",
-            "#14B8A6",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    });
-  }, [riwayatPengeluaran]);
+  // Helper function untuk memastikan nilai numerik valid
+  const ensureNumber = (value: string | number): number => {
+    if (typeof value === "string") {
+      // Hapus semua karakter non-numerik
+      const numericValue = value.replace(/\D/g, "");
+      return parseInt(numericValue, 10) || 0;
+    }
+    return value || 0;
+  };
 
   // Fungsi untuk mendapatkan data pembayaran yang akan ditampilkan
   const getCurrentPagePembayaran = (): RiwayatPembayaran[] => {
@@ -759,51 +431,6 @@ const Keuangan = () => {
             <p className="text-sm text-gray-500">
               Berdasarkan rata-rata 3 bulan terakhir
             </p>
-          </div>
-        </div>
-
-        {/* Grafik Tren */}
-        <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900">Tren Keuangan</h2>
-            <p className="text-base text-gray-500 mt-1">
-              Perbandingan pemasukan dan pengeluaran 6 bulan terakhir
-            </p>
-          </div>
-          <div className="p-6">
-            <div className="h-[300px] sm:h-[400px]">
-              {isClient && (
-                <ChartComponent options={chartOptions} data={chartData} />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Pie Chart */}
-        <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Kategori Pengeluaran Bulan Ini
-            </h2>
-            <p className="text-base text-gray-500 mt-1">
-              Distribusi pengeluaran berdasarkan kategori
-            </p>
-          </div>
-          <div className="p-6">
-            <div className="h-[300px] sm:h-[400px]">
-              {isClient && pieChartData.labels?.length === 0 ? (
-                <p className="text-gray-500 text-center">
-                  Belum ada data pengeluaran untuk bulan ini
-                </p>
-              ) : (
-                isClient && (
-                  <PieChartComponent
-                    data={pieChartData}
-                    options={pieChartOptions}
-                  />
-                )
-              )}
-            </div>
           </div>
         </div>
 
