@@ -15,7 +15,6 @@ import {
   ArcElement,
   TooltipItem,
 } from "chart.js";
-import { Line, Pie } from "react-chartjs-2";
 import {
   FaArrowLeft,
   FaTrash,
