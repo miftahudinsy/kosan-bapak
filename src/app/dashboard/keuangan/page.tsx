@@ -517,14 +517,40 @@ const Keuangan = () => {
   }, [riwayatPengeluaran]);
 
   // Fungsi untuk menghitung total halaman
-  const getTotalPages = (data: any[]) => {
+  const getTotalPages = (
+    data: RiwayatPembayaran[] | RiwayatPengeluaran[]
+  ): number => {
     return Math.ceil(data.length / itemsPerPage);
   };
 
   // Fungsi untuk mendapatkan data yang akan ditampilkan
-  const getCurrentPageData = (data: any[]) => {
+  const getCurrentPageData = (
+    data: RiwayatPembayaran[] | RiwayatPengeluaran[]
+  ): (RiwayatPembayaran | RiwayatPengeluaran)[] => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return data.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  // Fungsi untuk mendapatkan data pembayaran yang akan ditampilkan
+  const getCurrentPagePembayaran = (): RiwayatPembayaran[] => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return riwayatPembayaran.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  // Fungsi untuk mendapatkan data pengeluaran yang akan ditampilkan
+  const getCurrentPagePengeluaran = (): RiwayatPengeluaran[] => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return riwayatPengeluaran.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  // Fungsi untuk menghitung total halaman pembayaran
+  const getTotalPagesPembayaran = (): number => {
+    return Math.ceil(riwayatPembayaran.length / itemsPerPage);
+  };
+
+  // Fungsi untuk menghitung total halaman pengeluaran
+  const getTotalPagesPengeluaran = (): number => {
+    return Math.ceil(riwayatPengeluaran.length / itemsPerPage);
   };
 
   // Reset halaman saat tab berubah
@@ -839,13 +865,7 @@ const Keuangan = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {getCurrentPageData(
-                        riwayatPembayaran.sort(
-                          (a, b) =>
-                            new Date(b.tanggal).getTime() -
-                            new Date(a.tanggal).getTime()
-                        )
-                      ).map((pembayaran) => (
+                      {getCurrentPagePembayaran().map((pembayaran) => (
                         <tr key={pembayaran.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {formatDate(pembayaran.tanggal)}
@@ -883,18 +903,15 @@ const Keuangan = () => {
                       Sebelumnya
                     </button>
                     <span className="text-gray-600">
-                      Halaman {currentPage} dari{" "}
-                      {getTotalPages(riwayatPembayaran)}
+                      Halaman {currentPage} dari {getTotalPagesPembayaran()}
                     </span>
                     <button
                       onClick={() =>
                         setCurrentPage((prev) =>
-                          Math.min(prev + 1, getTotalPages(riwayatPembayaran))
+                          Math.min(prev + 1, getTotalPagesPembayaran())
                         )
                       }
-                      disabled={
-                        currentPage === getTotalPages(riwayatPembayaran)
-                      }
+                      disabled={currentPage === getTotalPagesPembayaran()}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Selanjutnya
@@ -904,13 +921,7 @@ const Keuangan = () => {
 
                 {/* Tampilan Mobile Pemasukan */}
                 <div className="md:hidden space-y-4">
-                  {getCurrentPageData(
-                    riwayatPembayaran.sort(
-                      (a, b) =>
-                        new Date(b.tanggal).getTime() -
-                        new Date(a.tanggal).getTime()
-                    )
-                  ).map((pembayaran) => (
+                  {getCurrentPagePembayaran().map((pembayaran) => (
                     <div
                       key={pembayaran.id}
                       className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
@@ -958,8 +969,7 @@ const Keuangan = () => {
                   {/* Pagination Controls for Mobile */}
                   <div className="flex flex-col items-center gap-4 mt-4">
                     <span className="text-gray-600 text-center">
-                      Halaman {currentPage} dari{" "}
-                      {getTotalPages(riwayatPembayaran)}
+                      Halaman {currentPage} dari {getTotalPagesPembayaran()}
                     </span>
                     <div className="flex gap-4">
                       <button
@@ -974,12 +984,10 @@ const Keuangan = () => {
                       <button
                         onClick={() =>
                           setCurrentPage((prev) =>
-                            Math.min(prev + 1, getTotalPages(riwayatPembayaran))
+                            Math.min(prev + 1, getTotalPagesPembayaran())
                           )
                         }
-                        disabled={
-                          currentPage === getTotalPages(riwayatPembayaran)
-                        }
+                        disabled={currentPage === getTotalPagesPembayaran()}
                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Selanjutnya
@@ -1032,13 +1040,7 @@ const Keuangan = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {getCurrentPageData(
-                        riwayatPengeluaran.sort(
-                          (a, b) =>
-                            new Date(b.tanggal).getTime() -
-                            new Date(a.tanggal).getTime()
-                        )
-                      ).map((pengeluaran) => (
+                      {getCurrentPagePengeluaran().map((pengeluaran) => (
                         <tr key={pengeluaran.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {formatDate(pengeluaran.tanggal)}
@@ -1078,18 +1080,15 @@ const Keuangan = () => {
                       Sebelumnya
                     </button>
                     <span className="text-gray-600">
-                      Halaman {currentPage} dari{" "}
-                      {getTotalPages(riwayatPengeluaran)}
+                      Halaman {currentPage} dari {getTotalPagesPengeluaran()}
                     </span>
                     <button
                       onClick={() =>
                         setCurrentPage((prev) =>
-                          Math.min(prev + 1, getTotalPages(riwayatPengeluaran))
+                          Math.min(prev + 1, getTotalPagesPengeluaran())
                         )
                       }
-                      disabled={
-                        currentPage === getTotalPages(riwayatPengeluaran)
-                      }
+                      disabled={currentPage === getTotalPagesPengeluaran()}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Selanjutnya
@@ -1099,13 +1098,7 @@ const Keuangan = () => {
 
                 {/* Tampilan Mobile Pengeluaran */}
                 <div className="md:hidden space-y-4">
-                  {getCurrentPageData(
-                    riwayatPengeluaran.sort(
-                      (a, b) =>
-                        new Date(b.tanggal).getTime() -
-                        new Date(a.tanggal).getTime()
-                    )
-                  ).map((pengeluaran) => (
+                  {getCurrentPagePengeluaran().map((pengeluaran) => (
                     <div
                       key={pengeluaran.id}
                       className="bg-white border border-gray-200 border-l-4 border-l-red-500 rounded-lg p-4 shadow-sm"
@@ -1151,8 +1144,7 @@ const Keuangan = () => {
                   {/* Pagination Controls for Mobile */}
                   <div className="flex flex-col items-center gap-4 mt-4">
                     <span className="text-gray-600 text-center">
-                      Halaman {currentPage} dari{" "}
-                      {getTotalPages(riwayatPengeluaran)}
+                      Halaman {currentPage} dari {getTotalPagesPengeluaran()}
                     </span>
                     <div className="flex gap-4">
                       <button
@@ -1167,15 +1159,10 @@ const Keuangan = () => {
                       <button
                         onClick={() =>
                           setCurrentPage((prev) =>
-                            Math.min(
-                              prev + 1,
-                              getTotalPages(riwayatPengeluaran)
-                            )
+                            Math.min(prev + 1, getTotalPagesPengeluaran())
                           )
                         }
-                        disabled={
-                          currentPage === getTotalPages(riwayatPengeluaran)
-                        }
+                        disabled={currentPage === getTotalPagesPengeluaran()}
                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Selanjutnya
