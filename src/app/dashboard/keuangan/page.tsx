@@ -24,53 +24,24 @@ import {
 import { RiwayatPembayaran } from "../data";
 import dynamic from "next/dynamic";
 
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from "chart.js";
+// Dynamic import untuk chart components
+const ChartComponent = dynamic(() => import("./ChartComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+      Loading chart...
+    </div>
+  ),
+});
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
-
-// Ubah dynamic import untuk chart components
-const ChartComponent = dynamic(
-  () => import("./ChartComponent").then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-        Loading chart...
-      </div>
-    ),
-  }
-);
-
-const PieChartComponent = dynamic(
-  () => import("./PieChartComponent").then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-        Loading chart...
-      </div>
-    ),
-  }
-);
+const PieChartComponent = dynamic(() => import("./PieChartComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+      Loading chart...
+    </div>
+  ),
+});
 
 const Keuangan = () => {
   const router = useRouter();
