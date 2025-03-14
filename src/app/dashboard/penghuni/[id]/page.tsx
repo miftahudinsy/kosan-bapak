@@ -170,10 +170,9 @@ export default function DetailPenghuni({
 
   const handleDelete = () => {
     if (penghuni) {
-      // Hapus data penghuni
       hapusPenghuni(penghuni.id);
       setIsDeleteModalOpen(false);
-      router.back();
+      setPenghuni(null);
     }
   };
 
