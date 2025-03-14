@@ -29,7 +29,7 @@ const ChartComponent = dynamic(() => import("./ChartComponent"), {
   ssr: false,
   loading: () => (
     <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-      Loading chart...
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
     </div>
   ),
 });
@@ -38,7 +38,7 @@ const PieChartComponent = dynamic(() => import("./PieChartComponent"), {
   ssr: false,
   loading: () => (
     <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-      Loading chart...
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
     </div>
   ),
 });
@@ -89,7 +89,7 @@ const Keuangan = () => {
       {
         label: "Pemasukan",
         data: [],
-        borderColor: "#10B981", // Emerald 500
+        borderColor: "#10B981",
         backgroundColor: "rgba(16, 185, 129, 0.1)",
         tension: 0.3,
         borderWidth: 2,
@@ -98,11 +98,12 @@ const Keuangan = () => {
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
+        fill: true,
       },
       {
         label: "Pengeluaran",
         data: [],
-        borderColor: "#EF4444", // Red 500
+        borderColor: "#EF4444",
         backgroundColor: "rgba(239, 68, 68, 0.1)",
         tension: 0.3,
         borderWidth: 2,
@@ -111,6 +112,7 @@ const Keuangan = () => {
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
+        fill: true,
       },
     ],
   });
@@ -419,13 +421,17 @@ const Keuangan = () => {
       return { pemasukan: pemasukanBulanan, pengeluaran: pengeluaranBulanan };
     });
 
+    // Pastikan data tidak undefined atau null
+    const validPemasukan = monthlyData.map((d) => d.pemasukan || 0);
+    const validPengeluaran = monthlyData.map((d) => d.pengeluaran || 0);
+
     setChartData({
       labels,
       datasets: [
         {
           label: "Pemasukan",
-          data: monthlyData.map((d) => d.pemasukan),
-          borderColor: "#10B981", // Emerald 500
+          data: validPemasukan,
+          borderColor: "#10B981",
           backgroundColor: "rgba(16, 185, 129, 0.1)",
           tension: 0.3,
           borderWidth: 2,
@@ -434,11 +440,12 @@ const Keuangan = () => {
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
+          fill: true,
         },
         {
           label: "Pengeluaran",
-          data: monthlyData.map((d) => d.pengeluaran),
-          borderColor: "#EF4444", // Red 500
+          data: validPengeluaran,
+          borderColor: "#EF4444",
           backgroundColor: "rgba(239, 68, 68, 0.1)",
           tension: 0.3,
           borderWidth: 2,
@@ -447,6 +454,7 @@ const Keuangan = () => {
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
+          fill: true,
         },
       ],
     });
@@ -454,7 +462,28 @@ const Keuangan = () => {
 
   // Tambahkan useEffect untuk mengupdate pie chart
   useEffect(() => {
-    if (riwayatPengeluaran.length === 0) return;
+    if (riwayatPengeluaran.length === 0) {
+      setPieChartData({
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            backgroundColor: [
+              "#10B981",
+              "#3B82F6",
+              "#F59E0B",
+              "#EF4444",
+              "#8B5CF6",
+              "#EC4899",
+              "#6366F1",
+              "#14B8A6",
+            ],
+            borderWidth: 1,
+          },
+        ],
+      });
+      return;
+    }
 
     const bulanIni = new Date().getMonth();
     const tahunIni = new Date().getFullYear();
@@ -469,10 +498,7 @@ const Keuangan = () => {
 
     // Hitung total per kategori
     const kategoriTotal = pengeluaranBulanIni.reduce((acc, curr) => {
-      const nominal =
-        typeof curr.nominal === "string"
-          ? parseInt(curr.nominal.replace(/\D/g, ""))
-          : curr.nominal;
+      const nominal = ensureNumber(curr.nominal);
       acc[curr.jenis] = (acc[curr.jenis] || 0) + nominal;
       return acc;
     }, {} as Record<string, number>);
@@ -487,14 +513,14 @@ const Keuangan = () => {
         {
           data,
           backgroundColor: [
-            "#10B981", // Emerald
-            "#3B82F6", // Blue
-            "#F59E0B", // Amber
-            "#EF4444", // Red
-            "#8B5CF6", // Purple
-            "#EC4899", // Pink
-            "#6366F1", // Indigo
-            "#14B8A6", // Teal
+            "#10B981",
+            "#3B82F6",
+            "#F59E0B",
+            "#EF4444",
+            "#8B5CF6",
+            "#EC4899",
+            "#6366F1",
+            "#14B8A6",
           ],
           borderWidth: 1,
         },

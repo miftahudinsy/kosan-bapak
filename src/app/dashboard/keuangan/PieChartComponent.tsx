@@ -16,12 +16,18 @@ export default function PieChartComponent({
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    ChartJS.register(ArcElement, Tooltip, Legend);
-    setIsClient(true);
+    if (typeof window !== "undefined") {
+      ChartJS.register(ArcElement, Tooltip, Legend);
+      setIsClient(true);
+    }
   }, []);
 
   if (!isClient) {
-    return null;
+    return (
+      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return <Pie options={options} data={data} />;
