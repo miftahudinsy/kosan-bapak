@@ -21,6 +21,7 @@ export interface PenghuniData {
   deposit?: string; // Opsional, disimpan dalam format mata uang Indonesia
   tanggalMulai: string;
   tanggalSelesai: string;
+  status: "aktif" | "nonaktif";
 }
 
 // Empty initial data array
@@ -47,6 +48,7 @@ export const getDaftarPenghuni = (): PenghuniData[] => {
 // Format angka menjadi mata uang Indonesia
 export const formatCurrency = (amount: number | string): string => {
   if (typeof amount === "string") {
+    // Hapus semua karakter non-numerik
     amount = parseInt(amount.replace(/\D/g, ""), 10);
   }
 
@@ -54,11 +56,13 @@ export const formatCurrency = (amount: number | string): string => {
     return "Rp0,-";
   }
 
+  // Format angka dengan pemisah ribuan
   return `Rp${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
 };
 
 // Parse mata uang Indonesia menjadi angka
 export const parseCurrency = (formattedAmount: string): number => {
+  // Hapus "Rp", pemisah ribuan, dan "-" dari string
   const numericString = formattedAmount.replace(/[^\d]/g, "");
   return parseInt(numericString, 10) || 0;
 };

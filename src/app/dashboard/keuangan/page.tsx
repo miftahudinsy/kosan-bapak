@@ -1,7 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaTrash, FaPlus } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaTrash,
+  FaPlus,
+  FaMoneyBillWave,
+  FaCalculator,
+} from "react-icons/fa";
 import {
   getRiwayatPembayaran,
   getDaftarPenghuni,
@@ -11,6 +17,7 @@ import {
   tambahRiwayatPengeluaran,
   hapusRiwayatPengeluaran,
   RiwayatPengeluaran,
+  PenghuniData,
 } from "../data";
 import { RiwayatPembayaran } from "../data";
 
@@ -22,7 +29,7 @@ const Keuangan = () => {
   const [riwayatPengeluaran, setRiwayatPengeluaran] = useState<
     RiwayatPengeluaran[]
   >([]);
-  const [penghuni] = useState(getDaftarPenghuni());
+  const [penghuni, setPenghuni] = useState<PenghuniData[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [pembayaranToDelete, setPembayaranToDelete] =
     useState<RiwayatPembayaran | null>(null);
@@ -41,13 +48,148 @@ const Keuangan = () => {
     tanggal: "",
     nominal: "",
   });
+  const [statistik, setStatistik] = useState({
+    totalPemasukanBulanIni: 0,
+    totalPengeluaranBulanIni: 0,
+    persentasePerubahanPemasukan: 0,
+    persentasePerubahanPengeluaran: 0,
+    estimasiPendapatanBulanan: 0,
+    estimasiBiayaOperasional: 0,
+  });
 
+  // Format currency khusus untuk statistik dan grafik
+  const formatStatisticCurrency = (amount: number | string): string => {
+    if (typeof amount === "string") {
+      amount = parseInt(amount.replace(/\D/g, ""), 10);
+    }
+    if (isNaN(amount)) {
+      return "Rp0,-";
+    }
+    amount = amount * 1000;
+    return `Rp${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
+  };
+
+  // Load initial data
   useEffect(() => {
     const dataPembayaran = getRiwayatPembayaran();
     const dataPengeluaran = getRiwayatPengeluaran();
+    const dataPenghuni = getDaftarPenghuni();
     setRiwayatPembayaran(dataPembayaran);
     setRiwayatPengeluaran(dataPengeluaran);
+    setPenghuni(dataPenghuni);
   }, []);
+
+  // Helper function untuk memastikan nilai numerik valid
+  const ensureNumber = (value: string | number): number => {
+    if (typeof value === "string") {
+      // Hapus semua karakter non-numerik kecuali titik desimal
+      const numericValue = value.replace(/[^0-9.]/g, "");
+      return parseFloat(numericValue) || 0;
+    }
+    return value || 0;
+  };
+
+  // Calculate statistics when data changes
+  useEffect(() => {
+    if (riwayatPembayaran.length === 0 && riwayatPengeluaran.length === 0)
+      return;
+
+    const bulanIni = new Date().getMonth();
+    const tahunIni = new Date().getFullYear();
+
+    // Total Pemasukan Bulan Ini
+    const totalPemasukanBulanIni = riwayatPembayaran
+      .filter(
+        (p) =>
+          new Date(p.tanggal).getMonth() === bulanIni &&
+          new Date(p.tanggal).getFullYear() === tahunIni
+      )
+      .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+
+    // Total Pengeluaran Bulan Ini
+    const totalPengeluaranBulanIni = riwayatPengeluaran
+      .filter(
+        (p) =>
+          new Date(p.tanggal).getMonth() === bulanIni &&
+          new Date(p.tanggal).getFullYear() === tahunIni
+      )
+      .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+
+    // Persentase Perubahan
+    const totalPemasukanBulanLalu = riwayatPembayaran
+      .filter(
+        (p) =>
+          new Date(p.tanggal).getMonth() === bulanIni - 1 &&
+          new Date(p.tanggal).getFullYear() === tahunIni
+      )
+      .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+
+    const totalPengeluaranBulanLalu = riwayatPengeluaran
+      .filter(
+        (p) =>
+          new Date(p.tanggal).getMonth() === bulanIni - 1 &&
+          new Date(p.tanggal).getFullYear() === tahunIni
+      )
+      .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+
+    const persentasePerubahanPemasukan =
+      totalPemasukanBulanLalu > 0
+        ? ((totalPemasukanBulanIni - totalPemasukanBulanLalu) /
+            totalPemasukanBulanLalu) *
+          100
+        : 0;
+
+    const persentasePerubahanPengeluaran =
+      totalPengeluaranBulanLalu > 0
+        ? ((totalPengeluaranBulanIni - totalPengeluaranBulanLalu) /
+            totalPengeluaranBulanLalu) *
+          100
+        : 0;
+
+    // Estimasi Pendapatan Bulanan
+    const kamarTerisi = penghuni.filter((p) => {
+      const tanggalSelesai = new Date(p.tanggalSelesai);
+      const sekarang = new Date();
+      return tanggalSelesai > sekarang;
+    });
+
+    const estimasiPendapatanBulanan = kamarTerisi.reduce((total, p) => {
+      const pembayaranAwal =
+        riwayatPembayaran
+          .filter(
+            (rp) => rp.idPenghuni === p.id && rp.jenis === "Pembayaran Awal"
+          )
+          .map((rp) => ensureNumber(rp.nominal))
+          .pop() || 0;
+      return total + pembayaranAwal;
+    }, 0);
+
+    // Estimasi Biaya Operasional
+    const rataRataPengeluaranBulanan =
+      Array.from({ length: 3 }, (_, i) => {
+        const targetBulan = new Date(tahunIni, bulanIni - 1 - i, 1);
+        return riwayatPengeluaran
+          .filter(
+            (p) =>
+              new Date(p.tanggal).getMonth() === targetBulan.getMonth() &&
+              new Date(p.tanggal).getFullYear() === targetBulan.getFullYear()
+          )
+          .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+      }).reduce((total, monthlyTotal) => total + monthlyTotal, 0) / 3;
+
+    setStatistik({
+      totalPemasukanBulanIni,
+      totalPengeluaranBulanIni,
+      persentasePerubahanPemasukan: isNaN(persentasePerubahanPemasukan)
+        ? 0
+        : persentasePerubahanPemasukan,
+      persentasePerubahanPengeluaran: isNaN(persentasePerubahanPengeluaran)
+        ? 0
+        : persentasePerubahanPengeluaran,
+      estimasiPendapatanBulanan,
+      estimasiBiayaOperasional: rataRataPengeluaranBulanan,
+    });
+  }, [riwayatPembayaran, riwayatPengeluaran, penghuni]);
 
   const handleBack = () => {
     router.back();
@@ -143,7 +285,84 @@ const Keuangan = () => {
           <FaArrowLeft /> Kembali
         </button>
 
-        <div className="flex justify-center mb-8">
+        {/* Statistik Ringkasan */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <div className="bg-green-50 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <FaMoneyBillWave className="text-green-500" />
+              <h3 className="text-sm font-medium text-gray-600">
+                Total Pemasukan Bulan Ini
+              </h3>
+            </div>
+            <p className="text-2xl font-bold text-green-600">
+              {formatStatisticCurrency(statistik.totalPemasukanBulanIni)}
+            </p>
+            <p
+              className={`text-sm ${
+                statistik.persentasePerubahanPemasukan >= 0
+                  ? "text-green-500"
+                  : "text-red-500"
+              }`}
+            >
+              {statistik.persentasePerubahanPemasukan >= 0 ? "↑" : "↓"}{" "}
+              {Math.abs(statistik.persentasePerubahanPemasukan).toFixed(1)}%
+              dari bulan lalu
+            </p>
+          </div>
+
+          <div className="bg-red-50 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <FaMoneyBillWave className="text-red-500" />
+              <h3 className="text-sm font-medium text-gray-600">
+                Total Pengeluaran Bulan Ini
+              </h3>
+            </div>
+            <p className="text-2xl font-bold text-red-600">
+              {formatStatisticCurrency(statistik.totalPengeluaranBulanIni)}
+            </p>
+            <p
+              className={`text-sm ${
+                statistik.persentasePerubahanPengeluaran >= 0
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
+            >
+              {statistik.persentasePerubahanPengeluaran >= 0 ? "↑" : "↓"}{" "}
+              {Math.abs(statistik.persentasePerubahanPengeluaran).toFixed(1)}%
+              dari bulan lalu
+            </p>
+          </div>
+
+          <div className="bg-blue-50 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <FaCalculator className="text-blue-500" />
+              <h3 className="text-sm font-medium text-gray-600">
+                Estimasi Pendapatan Bulanan
+              </h3>
+            </div>
+            <p className="text-2xl font-bold text-blue-600">
+              {formatStatisticCurrency(statistik.estimasiPendapatanBulanan)}
+            </p>
+            <p className="text-sm text-gray-500">Berdasarkan kamar terisi</p>
+          </div>
+
+          <div className="bg-purple-50 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <FaCalculator className="text-purple-500" />
+              <h3 className="text-sm font-medium text-gray-600">
+                Estimasi Biaya Operasional
+              </h3>
+            </div>
+            <p className="text-2xl font-bold text-purple-600">
+              {formatStatisticCurrency(statistik.estimasiBiayaOperasional)}
+            </p>
+            <p className="text-sm text-gray-500">
+              Berdasarkan rata-rata 3 bulan terakhir
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-center mb-8 sm:mb-4">
           <div className="flex space-x-2 bg-blue-50 p-1.5 rounded-full">
             <button
               onClick={() => setActiveTab("pemasukan")}
@@ -205,81 +424,93 @@ const Keuangan = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {riwayatPembayaran.map((pembayaran) => (
-                        <tr key={pembayaran.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(pembayaran.tanggal)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {getNamaPenghuni(pembayaran.idPenghuni)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {pembayaran.jenis}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                            {formatCurrency(pembayaran.nominal)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button
-                              onClick={() => handleDeleteClick(pembayaran)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <FaTrash />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {riwayatPembayaran
+                        .sort(
+                          (a, b) =>
+                            new Date(b.tanggal).getTime() -
+                            new Date(a.tanggal).getTime()
+                        )
+                        .map((pembayaran) => (
+                          <tr key={pembayaran.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatDate(pembayaran.tanggal)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {getNamaPenghuni(pembayaran.idPenghuni)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {pembayaran.jenis}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                              {formatCurrency(pembayaran.nominal)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <button
+                                onClick={() => handleDeleteClick(pembayaran)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                <FaTrash />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Tampilan Mobile Pemasukan */}
                 <div className="md:hidden space-y-4">
-                  {riwayatPembayaran.map((pembayaran) => (
-                    <div
-                      key={pembayaran.id}
-                      className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="text-base text-gray-500">Tanggal</p>
-                          <p className="text-base font-medium text-gray-900">
-                            {formatDate(pembayaran.tanggal)}
-                          </p>
+                  {riwayatPembayaran
+                    .sort(
+                      (a, b) =>
+                        new Date(b.tanggal).getTime() -
+                        new Date(a.tanggal).getTime()
+                    )
+                    .map((pembayaran) => (
+                      <div
+                        key={pembayaran.id}
+                        className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-base text-gray-500">Tanggal</p>
+                            <p className="text-base font-medium text-gray-900">
+                              {formatDate(pembayaran.tanggal)}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteClick(pembayaran)}
+                            className="text-red-600 hover:text-red-900 p-2"
+                          >
+                            <FaTrash className="text-lg" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleDeleteClick(pembayaran)}
-                          className="text-red-600 hover:text-red-900 p-2"
-                        >
-                          <FaTrash className="text-lg" />
-                        </button>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-base text-gray-500">
+                              Nama Penghuni
+                            </p>
+                            <p className="text-base font-medium text-gray-900">
+                              {getNamaPenghuni(pembayaran.idPenghuni)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-base text-gray-500">
+                              Jenis Pembayaran
+                            </p>
+                            <p className="text-base font-medium text-gray-900">
+                              {pembayaran.jenis}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-base text-gray-500">Nominal</p>
+                            <p className="text-base font-semibold text-green-600">
+                              {formatCurrency(pembayaran.nominal)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-base text-gray-500">
-                            Nama Penghuni
-                          </p>
-                          <p className="text-base font-medium text-gray-900">
-                            {getNamaPenghuni(pembayaran.idPenghuni)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-base text-gray-500">
-                            Jenis Pembayaran
-                          </p>
-                          <p className="text-base font-medium text-gray-900">
-                            {pembayaran.jenis}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-base text-gray-500">Nominal</p>
-                          <p className="text-base font-semibold text-green-600">
-                            {formatCurrency(pembayaran.nominal)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </>
             )}
@@ -326,81 +557,93 @@ const Keuangan = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {riwayatPengeluaran.map((pengeluaran) => (
-                        <tr key={pengeluaran.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(pengeluaran.tanggal)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {pengeluaran.deskripsi}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {pengeluaran.jenis}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
-                            {formatCurrency(pengeluaran.nominal)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button
-                              onClick={() =>
-                                handleDeletePengeluaranClick(pengeluaran)
-                              }
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <FaTrash />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {riwayatPengeluaran
+                        .sort(
+                          (a, b) =>
+                            new Date(b.tanggal).getTime() -
+                            new Date(a.tanggal).getTime()
+                        )
+                        .map((pengeluaran) => (
+                          <tr key={pengeluaran.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatDate(pengeluaran.tanggal)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {pengeluaran.deskripsi}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {pengeluaran.jenis}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
+                              {formatCurrency(pengeluaran.nominal)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <button
+                                onClick={() =>
+                                  handleDeletePengeluaranClick(pengeluaran)
+                                }
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                <FaTrash />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Tampilan Mobile Pengeluaran */}
                 <div className="md:hidden space-y-4">
-                  {riwayatPengeluaran.map((pengeluaran) => (
-                    <div
-                      key={pengeluaran.id}
-                      className="bg-white border border-gray-200 border-l-4 border-l-red-500 rounded-lg p-4 shadow-sm"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="text-base text-gray-500">Tanggal</p>
-                          <p className="text-base font-medium text-gray-900">
-                            {formatDate(pengeluaran.tanggal)}
-                          </p>
+                  {riwayatPengeluaran
+                    .sort(
+                      (a, b) =>
+                        new Date(b.tanggal).getTime() -
+                        new Date(a.tanggal).getTime()
+                    )
+                    .map((pengeluaran) => (
+                      <div
+                        key={pengeluaran.id}
+                        className="bg-white border border-gray-200 border-l-4 border-l-red-500 rounded-lg p-4 shadow-sm"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-base text-gray-500">Tanggal</p>
+                            <p className="text-base font-medium text-gray-900">
+                              {formatDate(pengeluaran.tanggal)}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              handleDeletePengeluaranClick(pengeluaran)
+                            }
+                            className="text-red-600 hover:text-red-900 p-2"
+                          >
+                            <FaTrash className="text-lg" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() =>
-                            handleDeletePengeluaranClick(pengeluaran)
-                          }
-                          className="text-red-600 hover:text-red-900 p-2"
-                        >
-                          <FaTrash className="text-lg" />
-                        </button>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-base text-gray-500">Deskripsi</p>
+                            <p className="text-base font-medium text-gray-900">
+                              {pengeluaran.deskripsi}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-base text-gray-500">Jenis</p>
+                            <p className="text-base font-medium text-gray-900">
+                              {pengeluaran.jenis}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-base text-gray-500">Nominal</p>
+                            <p className="text-base font-semibold text-red-600">
+                              {formatCurrency(pengeluaran.nominal)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-base text-gray-500">Deskripsi</p>
-                          <p className="text-base font-medium text-gray-900">
-                            {pengeluaran.deskripsi}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-base text-gray-500">Jenis</p>
-                          <p className="text-base font-medium text-gray-900">
-                            {pengeluaran.jenis}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-base text-gray-500">Nominal</p>
-                          <p className="text-base font-semibold text-red-600">
-                            {formatCurrency(pengeluaran.nominal)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </>
             )}
