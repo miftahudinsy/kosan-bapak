@@ -27,6 +27,10 @@ const TrendChart = dynamic(() => import("./TrendChart"), {
   ssr: false,
 });
 
+const ExpensePieChart = dynamic(() => import("./PieChart"), {
+  ssr: false,
+});
+
 const Keuangan = () => {
   const router = useRouter();
   const [riwayatPembayaran, setRiwayatPembayaran] = useState<
@@ -73,6 +77,9 @@ const Keuangan = () => {
       pemasukan: number;
       pengeluaran: number;
     }>
+  >([]);
+  const [pieChartData, setPieChartData] = useState<
+    Array<{ name: string; value: number }>
   >([]);
 
   // Load initial data
@@ -231,6 +238,39 @@ const Keuangan = () => {
 
     setChartData(monthlyData);
   }, [riwayatPembayaran, riwayatPengeluaran]);
+
+  // Process data for pie chart
+  useEffect(() => {
+    if (riwayatPengeluaran.length === 0) return;
+
+    const bulanIni = new Date().getMonth();
+    const tahunIni = new Date().getFullYear();
+
+    // Filter pengeluaran bulan ini
+    const pengeluaranBulanIni = riwayatPengeluaran.filter(
+      (p) =>
+        new Date(p.tanggal).getMonth() === bulanIni &&
+        new Date(p.tanggal).getFullYear() === tahunIni
+    );
+
+    // Hitung total per kategori
+    const totalPerKategori = pengeluaranBulanIni.reduce((acc, curr) => {
+      const jenis = curr.jenis;
+      const nominal = ensureNumber(curr.nominal);
+      acc[jenis] = (acc[jenis] || 0) + nominal;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Transform ke format yang dibutuhkan pie chart
+    const chartData = Object.entries(totalPerKategori)
+      .map(([name, value]) => ({
+        name,
+        value,
+      }))
+      .sort((a, b) => b.value - a.value); // Urutkan dari terbesar
+
+    setPieChartData(chartData);
+  }, [riwayatPengeluaran]);
 
   // Format currency khusus untuk statistik
   const formatStatisticCurrency = (amount: number | string): string => {
@@ -500,6 +540,24 @@ const Keuangan = () => {
           <div className="p-6">
             <TrendChart
               data={chartData}
+              formatCurrency={formatStatisticCurrency}
+            />
+          </div>
+        </div>
+
+        {/* Kategori Pengeluaran Chart */}
+        <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Kategori Pengeluaran
+            </h2>
+            <p className="text-base text-gray-500 mt-1">
+              Pengeluaran bulan ini berdasarkan kategori
+            </p>
+          </div>
+          <div className="p-6">
+            <ExpensePieChart
+              data={pieChartData}
               formatCurrency={formatStatisticCurrency}
             />
           </div>

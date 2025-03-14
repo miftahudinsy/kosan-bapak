@@ -104,7 +104,7 @@ export default function TrendChart({ data, formatCurrency }: TrendChartProps) {
           />
           <Legend
             verticalAlign="top"
-            height={36}
+            height={60}
             iconType="circle"
             formatter={(value) =>
               value.charAt(0).toUpperCase() + value.slice(1)
