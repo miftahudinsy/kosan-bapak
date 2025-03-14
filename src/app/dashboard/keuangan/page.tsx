@@ -49,6 +49,14 @@ ChartJS.register(
   ArcElement
 );
 
+interface ChartTooltipItem {
+  raw: number;
+  label?: string;
+  dataset: {
+    label?: string;
+  };
+}
+
 const Keuangan = () => {
   const router = useRouter();
   const [riwayatPembayaran, setRiwayatPembayaran] = useState<
@@ -155,7 +163,7 @@ const Keuangan = () => {
         callbacks: {
           label: function (tooltipItem: TooltipItem<"line">): string {
             const label = tooltipItem.dataset.label || "";
-            const value = tooltipItem.raw as number | string;
+            const value = tooltipItem.raw as number;
             return `${label}: ${formatStatisticCurrency(value)}`;
           },
         },
@@ -236,7 +244,7 @@ const Keuangan = () => {
         callbacks: {
           label: function (tooltipItem: TooltipItem<"pie">): string {
             const label = tooltipItem.label || "";
-            const value = tooltipItem.raw as number | string;
+            const value = tooltipItem.raw as number;
             return `${label}: ${formatStatisticCurrency(value)}`;
           },
         },
