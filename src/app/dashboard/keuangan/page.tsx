@@ -23,7 +23,7 @@ import {
 } from "../data";
 import { RiwayatPembayaran } from "../data";
 import dynamic from "next/dynamic";
-import { Line, Pie } from "react-chartjs-2";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -47,24 +47,30 @@ ChartJS.register(
   ArcElement
 );
 
-// Dynamic import dengan loading state
-const LineChart = dynamic(() => Promise.resolve(Line), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-      Loading chart...
-    </div>
-  ),
-});
+// Ubah dynamic import untuk chart components
+const ChartComponent = dynamic(
+  () => import("./ChartComponent").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+        Loading chart...
+      </div>
+    ),
+  }
+);
 
-const PieChart = dynamic(() => Promise.resolve(Pie), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-      Loading chart...
-    </div>
-  ),
-});
+const PieChartComponent = dynamic(
+  () => import("./PieChartComponent").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+        Loading chart...
+      </div>
+    ),
+  }
+);
 
 const Keuangan = () => {
   const router = useRouter();
@@ -767,12 +773,12 @@ const Keuangan = () => {
           </div>
           <div className="p-6">
             <div className="h-[300px] sm:h-[400px]">
-              <LineChart options={chartOptions} data={chartData} />
+              <ChartComponent options={chartOptions} data={chartData} />
             </div>
           </div>
         </div>
 
-        {/* Pie Chart Kategori Pengeluaran */}
+        {/* Pie Chart */}
         <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -783,15 +789,16 @@ const Keuangan = () => {
             </p>
           </div>
           <div className="p-6">
-            <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+            <div className="h-[300px] sm:h-[400px]">
               {pieChartData.labels?.length === 0 ? (
                 <p className="text-gray-500 text-center">
                   Belum ada data pengeluaran untuk bulan ini
                 </p>
               ) : (
-                <div className="w-full h-full max-w-2xl mx-auto">
-                  <PieChart data={pieChartData} options={pieChartOptions} />
-                </div>
+                <PieChartComponent
+                  data={pieChartData}
+                  options={pieChartOptions}
+                />
               )}
             </div>
           </div>
