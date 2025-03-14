@@ -38,6 +38,15 @@ export default function ChartComponent({ data, options }: ChartComponentProps) {
     }
   }, []);
 
+  // Validasi data sebelum render
+  if (!data || !data.datasets || data.datasets.length === 0) {
+    return (
+      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+        <p className="text-gray-500">Tidak ada data untuk ditampilkan</p>
+      </div>
+    );
+  }
+
   if (!isClient) {
     return (
       <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
