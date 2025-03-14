@@ -23,55 +23,48 @@ import {
 } from "../data";
 import { RiwayatPembayaran } from "../data";
 import dynamic from "next/dynamic";
+import { Line, Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from "chart.js";
 
-// Dynamic imports untuk chart components dengan auto-registration
-const LineChart = dynamic(
-  () =>
-    import("react-chartjs-2").then((mod) => {
-      import("chart.js").then((ChartJS) => {
-        ChartJS.Chart.register(
-          ChartJS.CategoryScale,
-          ChartJS.LinearScale,
-          ChartJS.PointElement,
-          ChartJS.LineElement,
-          ChartJS.Title,
-          ChartJS.Tooltip,
-          ChartJS.Legend
-        );
-      });
-      return mod.Line;
-    }),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-        Loading chart...
-      </div>
-    ),
-  }
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
 );
 
-const PieChart = dynamic(
-  () =>
-    import("react-chartjs-2").then((mod) => {
-      import("chart.js").then((ChartJS) => {
-        ChartJS.Chart.register(
-          ChartJS.ArcElement,
-          ChartJS.Tooltip,
-          ChartJS.Legend
-        );
-      });
-      return mod.Pie;
-    }),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
-        Loading chart...
-      </div>
-    ),
-  }
-);
+// Dynamic import dengan loading state
+const LineChart = dynamic(() => Promise.resolve(Line), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+      Loading chart...
+    </div>
+  ),
+});
+
+const PieChart = dynamic(() => Promise.resolve(Pie), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+      Loading chart...
+    </div>
+  ),
+});
 
 const Keuangan = () => {
   const router = useRouter();
