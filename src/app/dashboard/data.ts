@@ -221,23 +221,11 @@ export const hapusRiwayatPengeluaran = (id: number) => {
   return updatedData;
 };
 
-// Tambahkan state untuk penghuni lama
-const daftarPenghuniLama: PenghuniData[] = [];
-
 // Fungsi untuk menyimpan data penghuni lama ke localStorage
 const savePenghuniLamaToLocalStorage = (data: PenghuniData[]) => {
   if (typeof window !== "undefined") {
     localStorage.setItem("daftarPenghuniLama", JSON.stringify(data));
   }
-};
-
-// Fungsi untuk mendapatkan data penghuni lama dari localStorage
-const getPenghuniLamaFromLocalStorage = (): PenghuniData[] => {
-  if (typeof window !== "undefined") {
-    const storedData = localStorage.getItem("daftarPenghuniLama");
-    return storedData ? JSON.parse(storedData) : [];
-  }
-  return [];
 };
 
 // Fungsi untuk mengakhiri sewa kos
@@ -266,6 +254,15 @@ export const akhiriSewaKos = (idPenghuni: number) => {
       JSON.stringify(updatedDaftarPenghuni)
     );
   }
+};
+
+// Fungsi untuk mendapatkan data penghuni lama dari localStorage
+const getPenghuniLamaFromLocalStorage = (): PenghuniData[] => {
+  if (typeof window !== "undefined") {
+    const storedData = localStorage.getItem("daftarPenghuniLama");
+    return storedData ? JSON.parse(storedData) : [];
+  }
+  return [];
 };
 
 // Fungsi untuk mendapatkan daftar penghuni lama

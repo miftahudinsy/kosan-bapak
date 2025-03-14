@@ -179,7 +179,7 @@ export default function DetailPenghuni({
   const handleAkhiriSewa = () => {
     if (penghuni) {
       // Pindahkan ke daftar penghuni lama
-      const updatedData = akhiriSewaKos(penghuni.id);
+      akhiriSewaKos(penghuni.id);
       setIsAkhiriSewaModalOpen(false);
       router.push("/dashboard/penghuni-lama");
     }
