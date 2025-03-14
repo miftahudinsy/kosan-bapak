@@ -62,18 +62,31 @@ const CustomTooltip = ({
   return null;
 };
 
-const CustomLegend = (props: any) => {
-  const { payload, formatCurrency } = props;
+interface CustomLegendProps {
+  payload?: Array<{
+    value: string;
+    color: string;
+    payload: {
+      name: string;
+      value: number;
+    };
+  }>;
+  formatCurrency: (value: number) => string;
+}
+
+const CustomLegend = ({ payload, formatCurrency }: CustomLegendProps) => {
+  if (!payload) return null;
+
   return (
-    <div className="grid grid-cols-3 gap-3 text-sm">
-      {payload.map((entry: any, index: number) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mt-4 sm:mt-0">
+      {payload.map((entry, index) => (
         <div key={index} className="flex items-center gap-2">
           <div
             className="w-3 h-3 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
           <div>
-            <p className="font-medium text-gray-900">{entry.value}</p>
+            <p className="font-medium text-gray-900">{entry.payload.name}</p>
             <p className="text-gray-500 text-xs">
               {formatCurrency(entry.payload.value)}
             </p>
@@ -139,7 +152,7 @@ export default function ExpensePieChart({
           <Legend
             content={<CustomLegend formatCurrency={formatCurrency} />}
             verticalAlign="bottom"
-            height={100}
+            height={120}
           />
         </PieChart>
       </ResponsiveContainer>
