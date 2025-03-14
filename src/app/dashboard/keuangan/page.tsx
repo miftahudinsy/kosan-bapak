@@ -36,6 +36,32 @@ import {
   getDaftarPenghuniLama,
 } from "../data";
 import { RiwayatPembayaran } from "../data";
+import dynamic from "next/dynamic";
+
+// Dynamic imports untuk chart components
+const LineDynamic = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Line),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+        Loading chart...
+      </div>
+    ),
+  }
+);
+
+const PieDynamic = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Pie),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] sm:h-[400px] flex items-center justify-center">
+        Loading chart...
+      </div>
+    ),
+  }
+);
 
 // Register ChartJS components
 ChartJS.register(
@@ -750,7 +776,7 @@ const Keuangan = () => {
           </div>
           <div className="p-6">
             <div className="h-[300px] sm:h-[400px]">
-              <Line options={chartOptions} data={chartData} />
+              <LineDynamic options={chartOptions} data={chartData} />
             </div>
           </div>
         </div>
@@ -773,7 +799,7 @@ const Keuangan = () => {
                 </p>
               ) : (
                 <div className="w-full h-full max-w-2xl mx-auto">
-                  <Pie data={pieChartData} options={pieChartOptions} />
+                  <PieDynamic data={pieChartData} options={pieChartOptions} />
                 </div>
               )}
             </div>
