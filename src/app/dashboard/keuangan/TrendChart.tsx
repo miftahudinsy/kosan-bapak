@@ -93,12 +93,6 @@ export default function TrendChart({ data, formatCurrency }: TrendChartProps) {
             fontSize={12}
             tickLine={false}
           />
-          <YAxis
-            stroke="#6B7280"
-            fontSize={12}
-            tickFormatter={formatCurrency}
-            tickLine={false}
-          />
           <Tooltip
             content={<CustomTooltip formatCurrency={formatCurrency} />}
           />

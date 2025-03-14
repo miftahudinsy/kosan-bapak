@@ -300,13 +300,19 @@ const Keuangan = () => {
   // Fungsi untuk mendapatkan data pembayaran yang akan ditampilkan
   const getCurrentPagePembayaran = (): RiwayatPembayaran[] => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return riwayatPembayaran.slice(startIndex, startIndex + itemsPerPage);
+    const sortedData = [...riwayatPembayaran].sort(
+      (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+    );
+    return sortedData.slice(startIndex, startIndex + itemsPerPage);
   };
 
   // Fungsi untuk mendapatkan data pengeluaran yang akan ditampilkan
   const getCurrentPagePengeluaran = (): RiwayatPengeluaran[] => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return riwayatPengeluaran.slice(startIndex, startIndex + itemsPerPage);
+    const sortedData = [...riwayatPengeluaran].sort(
+      (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+    );
+    return sortedData.slice(startIndex, startIndex + itemsPerPage);
   };
 
   // Fungsi untuk menghitung total halaman pembayaran
@@ -528,38 +534,40 @@ const Keuangan = () => {
             </p>
           </div>
         </div>
-
-        {/* Trend Chart */}
-        <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900">Tren Keuangan</h2>
-            <p className="text-base text-gray-500 mt-1">
-              Perbandingan pemasukan dan pengeluaran 6 bulan terakhir
-            </p>
+        <div>
+          {/* Trend Chart */}
+          <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Tren Keuangan
+              </h2>
+              <p className="text-base text-gray-500 mt-1">
+                Perbandingan pemasukan dan pengeluaran 6 bulan terakhir
+              </p>
+            </div>
+            <div className="p-6">
+              <TrendChart
+                data={chartData}
+                formatCurrency={formatStatisticCurrency}
+              />
+            </div>
           </div>
-          <div className="p-6">
-            <TrendChart
-              data={chartData}
-              formatCurrency={formatStatisticCurrency}
-            />
-          </div>
-        </div>
-
-        {/* Kategori Pengeluaran Chart */}
-        <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Kategori Pengeluaran
-            </h2>
-            <p className="text-base text-gray-500 mt-1">
-              Pengeluaran bulan ini berdasarkan kategori
-            </p>
-          </div>
-          <div className="p-6">
-            <ExpensePieChart
-              data={pieChartData}
-              formatCurrency={formatStatisticCurrency}
-            />
+          {/* Kategori Pengeluaran Chart */}
+          <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 ">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Kategori Pengeluaran Bulan Ini
+              </h2>
+              <p className="text-base text-gray-500 mt-1">
+                Pengeluaran bulan ini berdasarkan kategori
+              </p>
+            </div>
+            <div className="p-6">
+              <ExpensePieChart
+                data={pieChartData}
+                formatCurrency={formatStatisticCurrency}
+              />
+            </div>
           </div>
         </div>
 

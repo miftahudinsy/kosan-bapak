@@ -65,7 +65,7 @@ const CustomTooltip = ({
 const CustomLegend = (props: any) => {
   const { payload, formatCurrency } = props;
   return (
-    <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className="grid grid-cols-3 gap-3 text-sm">
       {payload.map((entry: any, index: number) => (
         <div key={index} className="flex items-center gap-2">
           <div
@@ -111,8 +111,11 @@ export default function ExpensePieChart({
   }
 
   return (
-    <div className="h-[300px] sm:h-[400px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div
+      className="min-h-[300px] sm:min-h-[400px] w-full"
+      style={{ height: "auto" }}
+    >
+      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
         <PieChart>
           <Pie
             data={data}
