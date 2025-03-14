@@ -1,20 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartData,
-  ChartOptions,
-  ArcElement,
-  TooltipItem,
-} from "chart.js";
+import type { ChartData, ChartOptions, TooltipItem } from "chart.js";
 import {
   FaArrowLeft,
   FaTrash,
@@ -37,9 +24,23 @@ import {
 import { RiwayatPembayaran } from "../data";
 import dynamic from "next/dynamic";
 
-// Dynamic imports untuk chart components
-const LineDynamic = dynamic(
-  () => import("react-chartjs-2").then((mod) => mod.Line),
+// Dynamic imports untuk chart components dengan auto-registration
+const LineChart = dynamic(
+  () =>
+    import("react-chartjs-2").then((mod) => {
+      import("chart.js").then((ChartJS) => {
+        ChartJS.Chart.register(
+          ChartJS.CategoryScale,
+          ChartJS.LinearScale,
+          ChartJS.PointElement,
+          ChartJS.LineElement,
+          ChartJS.Title,
+          ChartJS.Tooltip,
+          ChartJS.Legend
+        );
+      });
+      return mod.Line;
+    }),
   {
     ssr: false,
     loading: () => (
@@ -50,8 +51,18 @@ const LineDynamic = dynamic(
   }
 );
 
-const PieDynamic = dynamic(
-  () => import("react-chartjs-2").then((mod) => mod.Pie),
+const PieChart = dynamic(
+  () =>
+    import("react-chartjs-2").then((mod) => {
+      import("chart.js").then((ChartJS) => {
+        ChartJS.Chart.register(
+          ChartJS.ArcElement,
+          ChartJS.Tooltip,
+          ChartJS.Legend
+        );
+      });
+      return mod.Pie;
+    }),
   {
     ssr: false,
     loading: () => (
@@ -60,18 +71,6 @@ const PieDynamic = dynamic(
       </div>
     ),
   }
-);
-
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
 );
 
 const Keuangan = () => {
@@ -775,7 +774,7 @@ const Keuangan = () => {
           </div>
           <div className="p-6">
             <div className="h-[300px] sm:h-[400px]">
-              <LineDynamic options={chartOptions} data={chartData} />
+              <LineChart options={chartOptions} data={chartData} />
             </div>
           </div>
         </div>
@@ -798,7 +797,7 @@ const Keuangan = () => {
                 </p>
               ) : (
                 <div className="w-full h-full max-w-2xl mx-auto">
-                  <PieDynamic data={pieChartData} options={pieChartOptions} />
+                  <PieChart data={pieChartData} options={pieChartOptions} />
                 </div>
               )}
             </div>
