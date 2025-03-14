@@ -49,14 +49,6 @@ ChartJS.register(
   ArcElement
 );
 
-interface ChartTooltipItem {
-  raw: number;
-  label?: string;
-  dataset: {
-    label?: string;
-  };
-}
-
 const Keuangan = () => {
   const router = useRouter();
   const [riwayatPembayaran, setRiwayatPembayaran] = useState<
@@ -515,21 +507,6 @@ const Keuangan = () => {
       ],
     });
   }, [riwayatPengeluaran]);
-
-  // Fungsi untuk menghitung total halaman
-  const getTotalPages = (
-    data: RiwayatPembayaran[] | RiwayatPengeluaran[]
-  ): number => {
-    return Math.ceil(data.length / itemsPerPage);
-  };
-
-  // Fungsi untuk mendapatkan data yang akan ditampilkan
-  const getCurrentPageData = (
-    data: RiwayatPembayaran[] | RiwayatPengeluaran[]
-  ): (RiwayatPembayaran | RiwayatPengeluaran)[] => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return data.slice(startIndex, startIndex + itemsPerPage);
-  };
 
   // Fungsi untuk mendapatkan data pembayaran yang akan ditampilkan
   const getCurrentPagePembayaran = (): RiwayatPembayaran[] => {
