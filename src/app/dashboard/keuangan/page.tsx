@@ -98,7 +98,6 @@ const Keuangan = () => {
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
-        fill: true,
       },
       {
         label: "Pengeluaran",
@@ -112,7 +111,6 @@ const Keuangan = () => {
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
-        fill: true,
       },
     ],
   });
@@ -440,7 +438,6 @@ const Keuangan = () => {
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
-          fill: true,
         },
         {
           label: "Pengeluaran",
@@ -454,7 +451,6 @@ const Keuangan = () => {
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
-          fill: true,
         },
       ],
     });

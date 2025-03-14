@@ -10,6 +10,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import type { ChartData, ChartOptions } from "chart.js";
 
@@ -30,7 +31,8 @@ export default function ChartComponent({ data, options }: ChartComponentProps) {
         LineElement,
         Title,
         Tooltip,
-        Legend
+        Legend,
+        Filler
       );
       setIsClient(true);
     }
