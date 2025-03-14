@@ -8,6 +8,7 @@ import {
   FaCalendarPlus,
   FaTrash,
   FaSignOutAlt,
+  FaWhatsapp,
 } from "react-icons/fa";
 import {
   getDaftarPenghuni,
@@ -36,6 +37,7 @@ interface PenghuniData {
   noKTP?: string;
   deposit?: string;
   kontakDarurat?: KontakDarurat;
+  noTelp?: string;
 }
 
 export default function DetailPenghuni({
@@ -206,6 +208,22 @@ export default function DetailPenghuni({
     return date.toLocaleDateString("id-ID", options);
   };
 
+  // Tambahkan fungsi format nomor HP
+  const formatPhoneNumber = (phone: string | undefined) => {
+    if (!phone) return "";
+
+    // Hapus semua karakter non-digit
+    let numbers = phone.replace(/\D/g, "");
+
+    // Hapus angka 0 di depan jika ada
+    if (numbers.startsWith("0")) {
+      numbers = numbers.substring(1);
+    }
+
+    // Tambahkan kode negara 62
+    return `62${numbers}`;
+  };
+
   // Fungsi untuk menampilkan kontak darurat
   const renderKontakDarurat = () => {
     if (!penghuni?.kontakDarurat) return null;
@@ -316,7 +334,7 @@ export default function DetailPenghuni({
               <div className="space-y-1">
                 <h2 className="text-gray-600">Nomor HP</h2>
                 <p className="text-lg font-semibold text-gray-900">
-                  {penghuni.noHP}
+                  {formatPhoneNumber(penghuni.noHP)}
                 </p>
               </div>
             )}
@@ -387,6 +405,23 @@ export default function DetailPenghuni({
                   );
                 }
               })()}
+            </div>
+
+            {/* Tambahkan tombol WhatsApp di sini */}
+            <div className="mb-6">
+              <a
+                href={`https://api.whatsapp.com/send?phone=${formatPhoneNumber(
+                  penghuni.noHP
+                )}&text=Halo%20${encodeURIComponent(
+                  penghuni.nama
+                )},%20ini%20pengingat%20untuk%20pembayaran%20kos%20bulan%20ini.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <FaWhatsapp className="text-xl" />
+                Ingatkan Via WA
+              </a>
             </div>
           </div>
 
