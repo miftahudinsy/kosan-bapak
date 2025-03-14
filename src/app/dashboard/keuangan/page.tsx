@@ -232,10 +232,11 @@ const Keuangan = () => {
         borderColor: "#E5E7EB",
         borderWidth: 1,
         padding: 12,
+        usePointStyle: true,
         callbacks: {
-          label: function (context) {
-            const label = context.label || "";
-            const value = context.raw as number;
+          label: function (tooltipItem: TooltipItem<"pie">): string {
+            const label = tooltipItem.label || "";
+            const value = tooltipItem.raw as number | string;
             return `${label}: ${formatStatisticCurrency(value)}`;
           },
         },

@@ -5,7 +5,6 @@ import { FaBed, FaArrowLeft, FaPlus, FaHistory } from "react-icons/fa";
 import {
   getDaftarPenghuni,
   tambahPenghuni,
-  perpanjangKos,
   PenghuniData,
   KontakDaruratType,
   formatCurrency,
@@ -31,9 +30,6 @@ const Penghuni = () => {
   const [penghuni, setPenghuni] = useState<PenghuniData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
-  const [isPerpanjangModalOpen, setIsPerpanjangModalOpen] = useState(false);
-  const [penghuniToPerpanjang, setPenghuniToPerpanjang] =
-    useState<PenghuniData | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nama: "",
     noKamar: "",
