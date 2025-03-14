@@ -18,6 +18,7 @@ import {
   hapusRiwayatPengeluaran,
   RiwayatPengeluaran,
   PenghuniData,
+  getDaftarPenghuniLama,
 } from "../data";
 import { RiwayatPembayaran } from "../data";
 
@@ -30,6 +31,7 @@ const Keuangan = () => {
     RiwayatPengeluaran[]
   >([]);
   const [penghuni, setPenghuni] = useState<PenghuniData[]>([]);
+  const [penghuniLama, setPenghuniLama] = useState<PenghuniData[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [pembayaranToDelete, setPembayaranToDelete] =
     useState<RiwayatPembayaran | null>(null);
@@ -74,9 +76,11 @@ const Keuangan = () => {
     const dataPembayaran = getRiwayatPembayaran();
     const dataPengeluaran = getRiwayatPengeluaran();
     const dataPenghuni = getDaftarPenghuni();
+    const dataPenghuniLama = getDaftarPenghuniLama();
     setRiwayatPembayaran(dataPembayaran);
     setRiwayatPengeluaran(dataPengeluaran);
     setPenghuni(dataPenghuni);
+    setPenghuniLama(dataPenghuniLama);
   }, []);
 
   // Helper function untuk memastikan nilai numerik valid
@@ -258,7 +262,10 @@ const Keuangan = () => {
 
   const getNamaPenghuni = (idPenghuni: number) => {
     const penghuniData = penghuni.find((p) => p.id === idPenghuni);
-    return penghuniData ? penghuniData.nama : "Tidak ditemukan";
+    if (penghuniData) return penghuniData.nama;
+
+    const penghuniLamaData = penghuniLama.find((p) => p.id === idPenghuni);
+    return penghuniLamaData ? penghuniLamaData.nama : "Tidak ditemukan";
   };
 
   const handleDeletePengeluaranClick = (pengeluaran: RiwayatPengeluaran) => {
