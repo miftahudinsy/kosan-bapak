@@ -118,22 +118,6 @@ const Penghuni = () => {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    // Persiapkan data kontak darurat
-    let kontakDaruratData: KontakDarurat | undefined;
-
-    // Jika ada data kontak darurat
-    if (
-      formData.kontakDaruratNama &&
-      formData.kontakDaruratTipe &&
-      formData.kontakDaruratNoHP
-    ) {
-      kontakDaruratData = {
-        nama: formData.kontakDaruratNama,
-        tipe: formData.kontakDaruratTipe as KontakDaruratType,
-        noHP: formData.kontakDaruratNoHP,
-      };
-    }
-
     // Tambah data penghuni
     const updatedData = tambahPenghuni({
       nama: formData.nama,
@@ -143,11 +127,14 @@ const Penghuni = () => {
       noHP: formData.noHP,
       noKTP: formData.noKTP,
       deposit: formData.deposit,
-      kontakDarurat: kontakDaruratData || {
-        nama: "",
-        tipe: KontakDaruratType.ORANG_TUA,
-        noHP: "",
+      kontakDarurat: {
+        nama: formData.kontakDaruratNama || "",
+        tipe:
+          (formData.kontakDaruratTipe as KontakDaruratType) ||
+          KontakDaruratType.ORANG_TUA,
+        noHP: formData.kontakDaruratNoHP || "",
       },
+      status: "aktif",
     });
 
     // Tambah riwayat pembayaran
