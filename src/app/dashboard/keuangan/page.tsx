@@ -21,6 +21,11 @@ import {
   getDaftarPenghuniLama,
 } from "../data";
 import { RiwayatPembayaran } from "../data";
+import dynamic from "next/dynamic";
+
+const TrendChart = dynamic(() => import("./TrendChart"), {
+  ssr: false,
+});
 
 const Keuangan = () => {
   const router = useRouter();
@@ -62,6 +67,13 @@ const Keuangan = () => {
   });
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [chartData, setChartData] = useState<
+    Array<{
+      name: string;
+      pemasukan: number;
+      pengeluaran: number;
+    }>
+  >([]);
 
   // Load initial data
   useEffect(() => {
@@ -176,6 +188,49 @@ const Keuangan = () => {
       estimasiBiayaOperasional: rataRataPengeluaranBulanan,
     });
   }, [riwayatPembayaran, riwayatPengeluaran, penghuni]);
+
+  // Process data for chart
+  useEffect(() => {
+    const bulanIni = new Date().getMonth();
+    const tahunIni = new Date().getFullYear();
+
+    // Get last 6 months
+    const monthlyData = Array.from({ length: 6 }, (_, i) => {
+      const targetMonth = new Date(tahunIni, bulanIni - (5 - i), 1);
+      const targetMonthEnd = new Date(tahunIni, bulanIni - (5 - i) + 1, 0);
+
+      const pemasukanBulanan = riwayatPembayaran
+        .filter((p) => {
+          const tanggalPembayaran = new Date(p.tanggal);
+          return (
+            tanggalPembayaran >= targetMonth &&
+            tanggalPembayaran <= targetMonthEnd
+          );
+        })
+        .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+
+      const pengeluaranBulanan = riwayatPengeluaran
+        .filter((p) => {
+          const tanggalPengeluaran = new Date(p.tanggal);
+          return (
+            tanggalPengeluaran >= targetMonth &&
+            tanggalPengeluaran <= targetMonthEnd
+          );
+        })
+        .reduce((sum, p) => sum + ensureNumber(p.nominal), 0);
+
+      return {
+        name: targetMonth.toLocaleDateString("id-ID", {
+          month: "short",
+          year: "numeric",
+        }),
+        pemasukan: pemasukanBulanan,
+        pengeluaran: pengeluaranBulanan,
+      };
+    });
+
+    setChartData(monthlyData);
+  }, [riwayatPembayaran, riwayatPengeluaran]);
 
   // Format currency khusus untuk statistik
   const formatStatisticCurrency = (amount: number | string): string => {
@@ -431,6 +486,22 @@ const Keuangan = () => {
             <p className="text-sm text-gray-500">
               Berdasarkan rata-rata 3 bulan terakhir
             </p>
+          </div>
+        </div>
+
+        {/* Trend Chart */}
+        <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900">Tren Keuangan</h2>
+            <p className="text-base text-gray-500 mt-1">
+              Perbandingan pemasukan dan pengeluaran 6 bulan terakhir
+            </p>
+          </div>
+          <div className="p-6">
+            <TrendChart
+              data={chartData}
+              formatCurrency={formatStatisticCurrency}
+            />
           </div>
         </div>
 
