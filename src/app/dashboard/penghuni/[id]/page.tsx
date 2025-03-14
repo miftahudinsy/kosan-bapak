@@ -50,6 +50,8 @@ export default function DetailPenghuni({
   const [isPerpanjangModalOpen, setIsPerpanjangModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAkhiriSewaModalOpen, setIsAkhiriSewaModalOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const [formData, setFormData] = useState({
     nama: "",
     noKamar: "",
@@ -164,6 +166,15 @@ export default function DetailPenghuni({
       if (updatedPenghuni) {
         setPenghuni(updatedPenghuni);
       }
+
+      // Tampilkan notifikasi
+      setToastMessage("Berhasil memperpanjang sewa kos");
+      setShowToast(true);
+
+      // Sembunyikan notifikasi setelah 3 detik
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
     }
     setIsPerpanjangModalOpen(false);
   };
@@ -244,6 +255,26 @@ export default function DetailPenghuni({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-auto z-50 animate-fade-in-down">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center justify-center gap-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-lg font-medium">{toastMessage}</span>
+          </div>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5">
         <button
           onClick={handleBack}

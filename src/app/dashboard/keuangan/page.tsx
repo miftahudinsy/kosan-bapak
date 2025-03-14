@@ -43,6 +43,8 @@ const Keuangan = () => {
   const [activeTab, setActiveTab] = useState<"pemasukan" | "pengeluaran">(
     "pemasukan"
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     deskripsi: "",
     jenis: "",
@@ -58,6 +60,8 @@ const Keuangan = () => {
     estimasiPendapatanBulanan: 0,
     estimasiBiayaOperasional: 0,
   });
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   // Format currency khusus untuk statistik dan grafik
   const formatStatisticCurrency = (amount: number | string): string => {
@@ -67,7 +71,6 @@ const Keuangan = () => {
     if (isNaN(amount)) {
       return "Rp0,-";
     }
-    amount = amount * 1000;
     return `Rp${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
   };
 
@@ -86,9 +89,9 @@ const Keuangan = () => {
   // Helper function untuk memastikan nilai numerik valid
   const ensureNumber = (value: string | number): number => {
     if (typeof value === "string") {
-      // Hapus semua karakter non-numerik kecuali titik desimal
-      const numericValue = value.replace(/[^0-9.]/g, "");
-      return parseFloat(numericValue) || 0;
+      // Hapus semua karakter non-numerik
+      const numericValue = value.replace(/\D/g, "");
+      return parseInt(numericValue, 10) || 0;
     }
     return value || 0;
   };
@@ -195,6 +198,23 @@ const Keuangan = () => {
     });
   }, [riwayatPembayaran, riwayatPengeluaran, penghuni]);
 
+  // Fungsi untuk menghitung total halaman
+  const getTotalPages = (data: any[]) => {
+    return Math.ceil(data.length / itemsPerPage);
+  };
+
+  // Fungsi untuk mendapatkan data yang akan ditampilkan
+  const getCurrentPageData = (data: any[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return data.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  // Reset halaman saat tab berubah
+  const handleTabChange = (tab: "pemasukan" | "pengeluaran") => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
   const handleBack = () => {
     router.back();
   };
@@ -248,6 +268,15 @@ const Keuangan = () => {
     });
     setRiwayatPengeluaran(updatedData);
     handleClosePengeluaranModal();
+
+    // Tampilkan notifikasi
+    setToastMessage("Berhasil menyimpan pengeluaran baru");
+    setShowToast(true);
+
+    // Sembunyikan notifikasi setelah 3 detik
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
   };
 
   const formatDate = (dateString: string) => {
@@ -284,6 +313,27 @@ const Keuangan = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-auto z-50 animate-fade-in-down">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center justify-center gap-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-lg font-medium">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8">
         <button
           onClick={handleBack}
@@ -372,7 +422,7 @@ const Keuangan = () => {
         <div className="flex justify-center mb-8 sm:mb-4">
           <div className="flex space-x-2 bg-blue-50 p-1.5 rounded-full">
             <button
-              onClick={() => setActiveTab("pemasukan")}
+              onClick={() => handleTabChange("pemasukan")}
               className={`px-4 py-3 rounded-full font-semibold transition-all ${
                 activeTab === "pemasukan"
                   ? "bg-white text-black shadow-md"
@@ -382,7 +432,7 @@ const Keuangan = () => {
               Pemasukan
             </button>
             <button
-              onClick={() => setActiveTab("pengeluaran")}
+              onClick={() => handleTabChange("pengeluaran")}
               className={`px-4 py-3 rounded-full font-semibold transition-all ${
                 activeTab === "pengeluaran"
                   ? "bg-white text-black shadow-md"
@@ -431,93 +481,153 @@ const Keuangan = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {riwayatPembayaran
-                        .sort(
+                      {getCurrentPageData(
+                        riwayatPembayaran.sort(
                           (a, b) =>
                             new Date(b.tanggal).getTime() -
                             new Date(a.tanggal).getTime()
                         )
-                        .map((pembayaran) => (
-                          <tr key={pembayaran.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDate(pembayaran.tanggal)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {getNamaPenghuni(pembayaran.idPenghuni)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {pembayaran.jenis}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                              {formatCurrency(pembayaran.nominal)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <button
-                                onClick={() => handleDeleteClick(pembayaran)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                <FaTrash />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                      ).map((pembayaran) => (
+                        <tr key={pembayaran.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(pembayaran.tanggal)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {getNamaPenghuni(pembayaran.idPenghuni)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {pembayaran.jenis}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                            {formatCurrency(pembayaran.nominal)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button
+                              onClick={() => handleDeleteClick(pembayaran)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+                  {/* Pagination Controls */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Sebelumnya
+                    </button>
+                    <span className="text-gray-600">
+                      Halaman {currentPage} dari{" "}
+                      {getTotalPages(riwayatPembayaran)}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, getTotalPages(riwayatPembayaran))
+                        )
+                      }
+                      disabled={
+                        currentPage === getTotalPages(riwayatPembayaran)
+                      }
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Selanjutnya
+                    </button>
+                  </div>
                 </div>
 
                 {/* Tampilan Mobile Pemasukan */}
                 <div className="md:hidden space-y-4">
-                  {riwayatPembayaran
-                    .sort(
+                  {getCurrentPageData(
+                    riwayatPembayaran.sort(
                       (a, b) =>
                         new Date(b.tanggal).getTime() -
                         new Date(a.tanggal).getTime()
                     )
-                    .map((pembayaran) => (
-                      <div
-                        key={pembayaran.id}
-                        className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <p className="text-base text-gray-500">Tanggal</p>
-                            <p className="text-base font-medium text-gray-900">
-                              {formatDate(pembayaran.tanggal)}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteClick(pembayaran)}
-                            className="text-red-600 hover:text-red-900 p-2"
-                          >
-                            <FaTrash className="text-lg" />
-                          </button>
+                  ).map((pembayaran) => (
+                    <div
+                      key={pembayaran.id}
+                      className="bg-white border border-gray-200 border-l-4 border-l-blue-500 rounded-lg p-4 shadow-sm"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-base text-gray-500">Tanggal</p>
+                          <p className="text-base font-medium text-gray-900">
+                            {formatDate(pembayaran.tanggal)}
+                          </p>
                         </div>
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-base text-gray-500">
-                              Nama Penghuni
-                            </p>
-                            <p className="text-base font-medium text-gray-900">
-                              {getNamaPenghuni(pembayaran.idPenghuni)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-base text-gray-500">
-                              Jenis Pembayaran
-                            </p>
-                            <p className="text-base font-medium text-gray-900">
-                              {pembayaran.jenis}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-base text-gray-500">Nominal</p>
-                            <p className="text-base font-semibold text-green-600">
-                              {formatCurrency(pembayaran.nominal)}
-                            </p>
-                          </div>
+                        <button
+                          onClick={() => handleDeleteClick(pembayaran)}
+                          className="text-red-600 hover:text-red-900 p-2"
+                        >
+                          <FaTrash className="text-lg" />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-base text-gray-500">
+                            Nama Penghuni
+                          </p>
+                          <p className="text-base font-medium text-gray-900">
+                            {getNamaPenghuni(pembayaran.idPenghuni)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-gray-500">
+                            Jenis Pembayaran
+                          </p>
+                          <p className="text-base font-medium text-gray-900">
+                            {pembayaran.jenis}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-gray-500">Nominal</p>
+                          <p className="text-base font-semibold text-green-600">
+                            {formatCurrency(pembayaran.nominal)}
+                          </p>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                  {/* Pagination Controls for Mobile */}
+                  <div className="flex flex-col items-center gap-4 mt-4">
+                    <span className="text-gray-600 text-center">
+                      Halaman {currentPage} dari{" "}
+                      {getTotalPages(riwayatPembayaran)}
+                    </span>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Sebelumnya
+                      </button>
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, getTotalPages(riwayatPembayaran))
+                          )
+                        }
+                        disabled={
+                          currentPage === getTotalPages(riwayatPembayaran)
+                        }
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Selanjutnya
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -564,93 +674,156 @@ const Keuangan = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {riwayatPengeluaran
-                        .sort(
+                      {getCurrentPageData(
+                        riwayatPengeluaran.sort(
                           (a, b) =>
                             new Date(b.tanggal).getTime() -
                             new Date(a.tanggal).getTime()
                         )
-                        .map((pengeluaran) => (
-                          <tr key={pengeluaran.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDate(pengeluaran.tanggal)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {pengeluaran.deskripsi}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {pengeluaran.jenis}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
-                              {formatCurrency(pengeluaran.nominal)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <button
-                                onClick={() =>
-                                  handleDeletePengeluaranClick(pengeluaran)
-                                }
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                <FaTrash />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                      ).map((pengeluaran) => (
+                        <tr key={pengeluaran.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(pengeluaran.tanggal)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {pengeluaran.deskripsi}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {pengeluaran.jenis}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
+                            {formatCurrency(pengeluaran.nominal)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button
+                              onClick={() =>
+                                handleDeletePengeluaranClick(pengeluaran)
+                              }
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+                  {/* Pagination Controls */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Sebelumnya
+                    </button>
+                    <span className="text-gray-600">
+                      Halaman {currentPage} dari{" "}
+                      {getTotalPages(riwayatPengeluaran)}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, getTotalPages(riwayatPengeluaran))
+                        )
+                      }
+                      disabled={
+                        currentPage === getTotalPages(riwayatPengeluaran)
+                      }
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Selanjutnya
+                    </button>
+                  </div>
                 </div>
 
                 {/* Tampilan Mobile Pengeluaran */}
                 <div className="md:hidden space-y-4">
-                  {riwayatPengeluaran
-                    .sort(
+                  {getCurrentPageData(
+                    riwayatPengeluaran.sort(
                       (a, b) =>
                         new Date(b.tanggal).getTime() -
                         new Date(a.tanggal).getTime()
                     )
-                    .map((pengeluaran) => (
-                      <div
-                        key={pengeluaran.id}
-                        className="bg-white border border-gray-200 border-l-4 border-l-red-500 rounded-lg p-4 shadow-sm"
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <p className="text-base text-gray-500">Tanggal</p>
-                            <p className="text-base font-medium text-gray-900">
-                              {formatDate(pengeluaran.tanggal)}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() =>
-                              handleDeletePengeluaranClick(pengeluaran)
-                            }
-                            className="text-red-600 hover:text-red-900 p-2"
-                          >
-                            <FaTrash className="text-lg" />
-                          </button>
+                  ).map((pengeluaran) => (
+                    <div
+                      key={pengeluaran.id}
+                      className="bg-white border border-gray-200 border-l-4 border-l-red-500 rounded-lg p-4 shadow-sm"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-base text-gray-500">Tanggal</p>
+                          <p className="text-base font-medium text-gray-900">
+                            {formatDate(pengeluaran.tanggal)}
+                          </p>
                         </div>
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-base text-gray-500">Deskripsi</p>
-                            <p className="text-base font-medium text-gray-900">
-                              {pengeluaran.deskripsi}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-base text-gray-500">Jenis</p>
-                            <p className="text-base font-medium text-gray-900">
-                              {pengeluaran.jenis}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-base text-gray-500">Nominal</p>
-                            <p className="text-base font-semibold text-red-600">
-                              {formatCurrency(pengeluaran.nominal)}
-                            </p>
-                          </div>
+                        <button
+                          onClick={() =>
+                            handleDeletePengeluaranClick(pengeluaran)
+                          }
+                          className="text-red-600 hover:text-red-900 p-2"
+                        >
+                          <FaTrash className="text-lg" />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-base text-gray-500">Deskripsi</p>
+                          <p className="text-base font-medium text-gray-900">
+                            {pengeluaran.deskripsi}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-gray-500">Jenis</p>
+                          <p className="text-base font-medium text-gray-900">
+                            {pengeluaran.jenis}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-gray-500">Nominal</p>
+                          <p className="text-base font-semibold text-red-600">
+                            {formatCurrency(pengeluaran.nominal)}
+                          </p>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                  {/* Pagination Controls for Mobile */}
+                  <div className="flex flex-col items-center gap-4 mt-4">
+                    <span className="text-gray-600 text-center">
+                      Halaman {currentPage} dari{" "}
+                      {getTotalPages(riwayatPengeluaran)}
+                    </span>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Sebelumnya
+                      </button>
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(
+                              prev + 1,
+                              getTotalPages(riwayatPengeluaran)
+                            )
+                          )
+                        }
+                        disabled={
+                          currentPage === getTotalPages(riwayatPengeluaran)
+                        }
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Selanjutnya
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </>
             )}

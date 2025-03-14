@@ -5,27 +5,18 @@ import { FaBed, FaArrowLeft, FaPlus, FaHistory } from "react-icons/fa";
 import {
   getDaftarPenghuni,
   tambahPenghuni,
+  hapusPenghuni,
+  perpanjangKos,
+  PenghuniData,
+  KontakDaruratType,
   formatCurrency,
   tambahRiwayatPembayaran,
-  KontakDaruratType,
 } from "../data";
 
 interface KontakDarurat {
   nama: string;
   tipe: KontakDaruratType;
   noHP: string;
-}
-
-interface PenghuniData {
-  id: number;
-  nama: string;
-  noKamar: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-  noHP: string;
-  noKTP?: string;
-  deposit?: string;
-  kontakDarurat?: KontakDarurat;
 }
 
 interface FormData {
@@ -37,15 +28,24 @@ interface FormData {
   noKTP: string;
   deposit: string;
   kontakDaruratNama: string;
-  kontakDaruratTipe: string;
+  kontakDaruratTipe: KontakDaruratType;
   kontakDaruratNoHP: string;
   nominalPembayaran: string;
 }
 
 const Penghuni = () => {
   const router = useRouter();
+  const [penghuni, setPenghuni] = useState<PenghuniData[]>([]);
+  const [penghuniLama, setPenghuniLama] = useState<PenghuniData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isPerpanjangModalOpen, setIsPerpanjangModalOpen] = useState(false);
+  const [penghuniToDelete, setPenghuniToDelete] = useState<PenghuniData | null>(
+    null
+  );
+  const [penghuniToPerpanjang, setPenghuniToPerpanjang] =
+    useState<PenghuniData | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nama: "",
     noKamar: "",
@@ -55,17 +55,18 @@ const Penghuni = () => {
     noKTP: "",
     deposit: "",
     kontakDaruratNama: "",
-    kontakDaruratTipe: "",
+    kontakDaruratTipe: "Keluarga" as KontakDaruratType,
     kontakDaruratNoHP: "",
     nominalPembayaran: "",
   });
-  const [penghuniList, setPenghuniList] = useState<PenghuniData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   // Load data from localStorage on component mount
   useEffect(() => {
     const loadedData = getDaftarPenghuni();
-    setPenghuniList(loadedData);
+    setPenghuni(loadedData);
   }, []);
 
   const handleKamarClick = (id: number) => {
@@ -77,7 +78,7 @@ const Penghuni = () => {
   };
 
   const handleTambahPenghuniClick = () => {
-    if (penghuniList.length >= 5) {
+    if (penghuni.length >= 5) {
       setIsLimitModalOpen(true);
       return;
     }
@@ -95,7 +96,7 @@ const Penghuni = () => {
       noKTP: "",
       deposit: "",
       kontakDaruratNama: "",
-      kontakDaruratTipe: "",
+      kontakDaruratTipe: "Keluarga" as KontakDaruratType,
       kontakDaruratNoHP: "",
       nominalPembayaran: "",
     });
@@ -149,7 +150,7 @@ const Penghuni = () => {
     }
 
     // Update the UI with the new data
-    setPenghuniList(updatedData);
+    setPenghuni(updatedData);
 
     // Reset form
     setFormData({
@@ -161,12 +162,55 @@ const Penghuni = () => {
       noKTP: "",
       deposit: "",
       kontakDaruratNama: "",
-      kontakDaruratTipe: "",
+      kontakDaruratTipe: "Keluarga" as KontakDaruratType,
       kontakDaruratNoHP: "",
       nominalPembayaran: "",
     });
 
     setIsModalOpen(false);
+
+    // Tampilkan notifikasi
+    setToastMessage("Berhasil menambahkan penghuni baru");
+    setShowToast(true);
+
+    // Sembunyikan notifikasi setelah 3 detik
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
+
+  const handlePerpanjang = () => {
+    if (penghuniToPerpanjang && formData.tanggalSelesai) {
+      const updatedData = perpanjangKos(
+        penghuniToPerpanjang.id,
+        formData.tanggalSelesai
+      );
+      setPenghuni(updatedData);
+      setIsPerpanjangModalOpen(false);
+      setPenghuniToPerpanjang(null);
+      setFormData({
+        nama: "",
+        noKamar: "",
+        tanggalMulai: "",
+        tanggalSelesai: "",
+        noHP: "",
+        noKTP: "",
+        deposit: "",
+        kontakDaruratNama: "",
+        kontakDaruratTipe: "Keluarga" as KontakDaruratType,
+        kontakDaruratNoHP: "",
+        nominalPembayaran: "",
+      });
+
+      // Tampilkan notifikasi
+      setToastMessage("Berhasil memperpanjang sewa kos");
+      setShowToast(true);
+
+      // Sembunyikan notifikasi setelah 3 detik
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -181,6 +225,26 @@ const Penghuni = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-auto z-50 animate-fade-in-down">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center justify-center gap-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-lg font-medium">{toastMessage}</span>
+          </div>
+        </div>
+      )}
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5 ">
         <button
           onClick={handleBack}
@@ -232,7 +296,7 @@ const Penghuni = () => {
         </button>
 
         <section className="space-y-3">
-          {penghuniList.length === 0 ? (
+          {penghuni.length === 0 ? (
             <div className="text-center py-8">
               <div className="flex justify-center mb-4">
                 <FaBed className="text-gray-400 text-5xl" />
@@ -243,7 +307,7 @@ const Penghuni = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {penghuniList
+              {penghuni
                 .filter(
                   (penghuni) =>
                     penghuni.nama
