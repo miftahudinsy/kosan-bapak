@@ -5,19 +5,12 @@ import { FaBed, FaArrowLeft, FaPlus, FaHistory } from "react-icons/fa";
 import {
   getDaftarPenghuni,
   tambahPenghuni,
-  hapusPenghuni,
   perpanjangKos,
   PenghuniData,
   KontakDaruratType,
   formatCurrency,
   tambahRiwayatPembayaran,
 } from "../data";
-
-interface KontakDarurat {
-  nama: string;
-  tipe: KontakDaruratType;
-  noHP: string;
-}
 
 interface FormData {
   nama: string;
@@ -36,14 +29,9 @@ interface FormData {
 const Penghuni = () => {
   const router = useRouter();
   const [penghuni, setPenghuni] = useState<PenghuniData[]>([]);
-  const [penghuniLama, setPenghuniLama] = useState<PenghuniData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isPerpanjangModalOpen, setIsPerpanjangModalOpen] = useState(false);
-  const [penghuniToDelete, setPenghuniToDelete] = useState<PenghuniData | null>(
-    null
-  );
   const [penghuniToPerpanjang, setPenghuniToPerpanjang] =
     useState<PenghuniData | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -177,40 +165,6 @@ const Penghuni = () => {
     setTimeout(() => {
       setShowToast(false);
     }, 3000);
-  };
-
-  const handlePerpanjang = () => {
-    if (penghuniToPerpanjang && formData.tanggalSelesai) {
-      const updatedData = perpanjangKos(
-        penghuniToPerpanjang.id,
-        formData.tanggalSelesai
-      );
-      setPenghuni(updatedData);
-      setIsPerpanjangModalOpen(false);
-      setPenghuniToPerpanjang(null);
-      setFormData({
-        nama: "",
-        noKamar: "",
-        tanggalMulai: "",
-        tanggalSelesai: "",
-        noHP: "",
-        noKTP: "",
-        deposit: "",
-        kontakDaruratNama: "",
-        kontakDaruratTipe: "Keluarga" as KontakDaruratType,
-        kontakDaruratNoHP: "",
-        nominalPembayaran: "",
-      });
-
-      // Tampilkan notifikasi
-      setToastMessage("Berhasil memperpanjang sewa kos");
-      setShowToast(true);
-
-      // Sembunyikan notifikasi setelah 3 detik
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
-    }
   };
 
   const formatDate = (dateString: string) => {

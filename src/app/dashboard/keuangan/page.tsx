@@ -13,6 +13,7 @@ import {
   ChartData,
   ChartOptions,
   ArcElement,
+  TooltipItem,
 } from "chart.js";
 import { Line, Pie } from "react-chartjs-2";
 import {
@@ -120,7 +121,7 @@ const Keuangan = () => {
     ],
   });
 
-  const [chartOptions, setChartOptions] = useState<ChartOptions<"line">>({
+  const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -152,10 +153,10 @@ const Keuangan = () => {
         padding: 12,
         usePointStyle: true,
         callbacks: {
-          label: function (context) {
-            return `${context.dataset.label}: ${formatStatisticCurrency(
-              context.raw as number
-            )}`;
+          label: function (tooltipItem: TooltipItem<"line">): string {
+            const label = tooltipItem.dataset.label || "";
+            const value = tooltipItem.raw as number | string;
+            return `${label}: ${formatStatisticCurrency(value)}`;
           },
         },
       },
@@ -182,13 +183,13 @@ const Keuangan = () => {
           font: {
             size: 12,
           },
-          callback: function (value: any) {
+          callback: function (value: number | string): string {
             return formatStatisticCurrency(value);
           },
         },
       },
     },
-  });
+  };
 
   const [pieChartData, setPieChartData] = useState<ChartData<"pie">>({
     labels: [],
