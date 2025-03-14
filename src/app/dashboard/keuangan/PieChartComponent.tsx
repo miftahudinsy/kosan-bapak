@@ -22,10 +22,18 @@ export default function PieChartComponent({
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      ChartJS.register(ArcElement, Tooltip, Legend);
-      setIsClient(true);
-    }
+    const registerChart = async () => {
+      if (typeof window !== "undefined") {
+        try {
+          ChartJS.register(ArcElement, Tooltip, Legend);
+          setIsClient(true);
+        } catch (error) {
+          console.error("Error registering Chart.js:", error);
+        }
+      }
+    };
+
+    registerChart();
   }, []);
 
   // Validasi data sebelum render

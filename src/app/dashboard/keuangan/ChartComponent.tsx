@@ -23,19 +23,27 @@ export default function ChartComponent({ data, options }: ChartComponentProps) {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      ChartJS.register(
-        CategoryScale,
-        LinearScale,
-        PointElement,
-        LineElement,
-        Title,
-        Tooltip,
-        Legend,
-        Filler
-      );
-      setIsClient(true);
-    }
+    const registerChart = async () => {
+      if (typeof window !== "undefined") {
+        try {
+          ChartJS.register(
+            CategoryScale,
+            LinearScale,
+            PointElement,
+            LineElement,
+            Title,
+            Tooltip,
+            Legend,
+            Filler
+          );
+          setIsClient(true);
+        } catch (error) {
+          console.error("Error registering Chart.js:", error);
+        }
+      }
+    };
+
+    registerChart();
   }, []);
 
   // Validasi data sebelum render

@@ -253,6 +253,12 @@ const Keuangan = () => {
       .replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
   };
 
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Load initial data
   useEffect(() => {
     const dataPembayaran = getRiwayatPembayaran();
@@ -766,7 +772,9 @@ const Keuangan = () => {
           </div>
           <div className="p-6">
             <div className="h-[300px] sm:h-[400px]">
-              <ChartComponent options={chartOptions} data={chartData} />
+              {isClient && (
+                <ChartComponent options={chartOptions} data={chartData} />
+              )}
             </div>
           </div>
         </div>
@@ -783,15 +791,17 @@ const Keuangan = () => {
           </div>
           <div className="p-6">
             <div className="h-[300px] sm:h-[400px]">
-              {pieChartData.labels?.length === 0 ? (
+              {isClient && pieChartData.labels?.length === 0 ? (
                 <p className="text-gray-500 text-center">
                   Belum ada data pengeluaran untuk bulan ini
                 </p>
               ) : (
-                <PieChartComponent
-                  data={pieChartData}
-                  options={pieChartOptions}
-                />
+                isClient && (
+                  <PieChartComponent
+                    data={pieChartData}
+                    options={pieChartOptions}
+                  />
+                )
               )}
             </div>
           </div>
