@@ -67,6 +67,7 @@ export default function DetailPenghuni({
     kontakDaruratNoHP: "",
     nominalPembayaran: "",
   });
+  const [templatePesan, setTemplatePesan] = useState("");
 
   useEffect(() => {
     const daftarPenghuni = getDaftarPenghuni();
@@ -90,6 +91,17 @@ export default function DetailPenghuni({
       });
     }
   }, [resolvedParams.id]);
+
+  useEffect(() => {
+    const savedKosData = localStorage.getItem("kosData");
+    if (savedKosData) {
+      const data = JSON.parse(savedKosData);
+      setTemplatePesan(
+        data.templatePesan ||
+          "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar"
+      );
+    }
+  }, []);
 
   const handleBack = () => {
     router.back();
@@ -143,6 +155,15 @@ export default function DetailPenghuni({
       if (updatedPenghuni) {
         setPenghuni(updatedPenghuni);
       }
+
+      // Tampilkan notifikasi
+      setToastMessage("Berhasil menyimpan data");
+      setShowToast(true);
+
+      // Sembunyikan notifikasi setelah 3 detik
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
     }
     setIsEditModalOpen(false);
   };
@@ -412,9 +433,12 @@ export default function DetailPenghuni({
               <a
                 href={`https://api.whatsapp.com/send?phone=${formatPhoneNumber(
                   penghuni.noHP
-                )}&text=Halo%20${encodeURIComponent(
-                  penghuni.nama
-                )},%20ini%20pengingat%20untuk%20pembayaran%20kos%20bulan%20ini.`}
+                )}&text=${encodeURIComponent(
+                  templatePesan.replace(
+                    "[tanggalselesaikos]",
+                    formatDate(penghuni.tanggalSelesai)
+                  )
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"

@@ -3,15 +3,26 @@
 
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import { FaUsers, FaMoneyBillAlt } from "react-icons/fa";
+import { FaUsers, FaMoneyBillAlt, FaCog } from "react-icons/fa";
 import { TbLogout2 } from "react-icons/tb";
 import { getDaftarPenghuni, PenghuniData, initialData } from "./data"; // Import data dan interface
 
 const Dashboard = () => {
   const router = useRouter();
   const [daftarPenghuni, setDaftarPenghuni] = useState<PenghuniData[]>([]);
+  const [kosData, setKosData] = useState({ namaKos: "", jumlahKamar: 5 });
 
   useEffect(() => {
+    // Cek apakah data kos sudah ada
+    const savedKosData = localStorage.getItem("kosData");
+    if (!savedKosData) {
+      router.push("/welcome");
+      return;
+    }
+
+    // Set data kos
+    setKosData(JSON.parse(savedKosData));
+
     // Mengambil data dari getDaftarPenghuni
     const data = getDaftarPenghuni();
 
@@ -22,7 +33,7 @@ const Dashboard = () => {
     } else {
       setDaftarPenghuni(data);
     }
-  }, []);
+  }, [router]);
 
   const handlePenghuniClick = () => {
     router.push("/dashboard/penghuni");
@@ -40,6 +51,10 @@ const Dashboard = () => {
     router.push("/"); // Mengarahkan ke halaman awal
   };
 
+  const handlePengaturanClick = () => {
+    router.push("/dashboard/pengaturan");
+  };
+
   // Fungsi untuk menghitung kamar yang jatuh tempo
   const hitungKamarJatuhTempo = (penghuniList: PenghuniData[]): number => {
     return penghuniList.filter((penghuni) => {
@@ -53,8 +68,8 @@ const Dashboard = () => {
 
   // Menghitung jumlah kamar terisi
   const kamarTerisi = daftarPenghuni.length;
-  // Anggap jumlah total kamar adalah 10 (bisa diubah sesuai kebutuhan)
-  const totalKamar = 5;
+  // Ganti totalKamar dengan data dari localStorage
+  const totalKamar = kosData.jumlahKamar;
   // Menghitung jumlah kamar kosong
   const kamarKosong = totalKamar - kamarTerisi;
   // Menghitung kamar yang sebentar lagi jatuh tempo
@@ -66,15 +81,36 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5 ">
-        <div className="flex flex-col">
-          <h1 className="text-3xl text-center sm:text-left sm:text-4xl font-extrabold text-gray-900 mt-2 sm:mt-0 mb-2">
-            Nama Kos Anda Disini
-          </h1>
-          <p className=" text-gray-600 sm:mt-1 text-center sm:text-left mb-2">
-            Paket lisensi: Gartis
-          </p>
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5">
+        {/* Header dengan pengaturan */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+          <div className="flex flex-col">
+            <h1 className="text-3xl text-center sm:text-left sm:text-4xl font-extrabold text-gray-900 mt-2 sm:mt-0 mb-2">
+              {kosData.namaKos}
+            </h1>
+            <p className="text-gray-600 sm:mt-1 text-center sm:text-left mb-2">
+              Paket lisensi: Gratis
+            </p>
+          </div>
+
+          {/* Tombol Pengaturan - Desktop */}
+          <button
+            onClick={handlePengaturanClick}
+            className="hidden sm:flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
+          >
+            <FaCog className="text-xl text-gray-600" />
+            <span className="text-gray-700 font-medium">Pengaturan</span>
+          </button>
         </div>
+
+        {/* Tombol Pengaturan - Mobile */}
+        <button
+          onClick={handlePengaturanClick}
+          className="sm:hidden w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-3 rounded-lg transition-colors"
+        >
+          <FaCog className="text-xl text-gray-600" />
+          <span className="text-gray-700 font-medium">Pengaturan</span>
+        </button>
 
         {/* Menu Ringkas + tambah penghuni */}
         <div className="bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 ">
