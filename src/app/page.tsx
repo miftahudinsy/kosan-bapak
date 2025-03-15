@@ -188,7 +188,7 @@ const Home = () => {
                     Bagaimana cara upgrade ke premium?
                   </h3>
                   <p className="mt-2 text-gray-600">
-                    Masuk ke halaman "Pengaturan" lalu klik "Upgrade ke Pro".
+                    Masuk ke halaman Pengaturan lalu klik Upgrade ke Pro.
                   </p>
                 </div>
               </div>
