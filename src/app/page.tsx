@@ -349,7 +349,6 @@ const Home = () => {
             className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
           >
             <FaInstagram size={20} />
-            <span>@miftahudinsy</span>
           </Link>
         </div>
       </footer>
