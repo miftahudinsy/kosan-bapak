@@ -28,7 +28,7 @@ const Home = () => {
         </div>
 
         <div className="z-10 text-center space-y-6">
-          <h1 className="text-4xl sm:text-6xl font-bold text-gray-800 mb-3">
+          <h1 className="text-4xl sm:text-6xl font-bold text-blue-700 mb-3">
             KosanBapak
           </h1>
           <p className="text-xl sm:text-2xl text-gray-600 mb-10">
