@@ -1,39 +1,82 @@
 // c:\Users\mifta\next-js\bapak-kosan\src\app\dashboard\page.tsx
 "use client";
 
+import { createClient } from "@/utils/supabase/client";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
 import { FaUsers, FaMoneyBillAlt, FaCog } from "react-icons/fa";
 import { TbLogout2 } from "react-icons/tb";
-import { getDaftarPenghuni, PenghuniData, initialData } from "./data"; // Import data dan interface
+
+interface KosData {
+  id: string;
+  nama_kos: string;
+  jumlah_kamar: number;
+  template_pesan: string;
+}
+
+interface PenghuniData {
+  id: string;
+  nama: string;
+  nomorKamar: string;
+  nomorHp: string;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+  biayaSewa: number;
+  status: string;
+}
 
 const Dashboard = () => {
   const router = useRouter();
   const [daftarPenghuni, setDaftarPenghuni] = useState<PenghuniData[]>([]);
-  const [kosData, setKosData] = useState({ namaKos: "", jumlahKamar: 5 });
+  const [kosData, setKosData] = useState<KosData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    // Cek apakah data kos sudah ada
-    const savedKosData = localStorage.getItem("kosData");
-    if (!savedKosData) {
-      router.push("/welcome");
-      return;
+    async function getKosData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("kos")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error:", error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        router.push("/welcome");
+        return;
+      }
+
+      setKosData(data[0]);
+
+      // Fetch penghuni data
+      const { data: penghuniData, error: penghuniError } = await supabase
+        .from("penghuni")
+        .select("*")
+        .eq("kos_id", data[0].id);
+
+      if (penghuniError) {
+        console.error("Error fetching penghuni:", penghuniError);
+        return;
+      }
+
+      setDaftarPenghuni(penghuniData || []);
+      setLoading(false);
     }
 
-    // Set data kos
-    setKosData(JSON.parse(savedKosData));
-
-    // Mengambil data dari getDaftarPenghuni
-    const data = getDaftarPenghuni();
-
-    // Jika localstorage kosong, maka inisialisasi dengan initialData
-    if (data.length === 0) {
-      localStorage.setItem("daftarPenghuni", JSON.stringify(initialData));
-      setDaftarPenghuni(initialData);
-    } else {
-      setDaftarPenghuni(data);
-    }
-  }, [router]);
+    getKosData();
+  }, []);
 
   const handlePenghuniClick = () => {
     router.push("/dashboard/penghuni");
@@ -47,8 +90,13 @@ const Dashboard = () => {
     router.push("/dashboard/penghuni");
   };
 
-  const handleLogout = () => {
-    router.push("/"); // Mengarahkan ke halaman awal
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   const handlePengaturanClick = () => {
@@ -62,14 +110,14 @@ const Dashboard = () => {
       const selesaiDate = new Date(penghuni.tanggalSelesai);
       const diffTime = selesaiDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 && diffDays < 7; // Sisa kurang dari 7 hari DAN lebih dari 0
+      return diffDays > 0 && diffDays < 7;
     }).length;
   };
 
   // Menghitung jumlah kamar terisi
   const kamarTerisi = daftarPenghuni.length;
-  // Ganti totalKamar dengan data dari localStorage
-  const totalKamar = kosData.jumlahKamar;
+  // Ganti totalKamar dengan data dari Supabase
+  const totalKamar = kosData?.jumlah_kamar || 0;
   // Menghitung jumlah kamar kosong
   const kamarKosong = totalKamar - kamarTerisi;
   // Menghitung kamar yang sebentar lagi jatuh tempo
@@ -79,6 +127,14 @@ const Dashboard = () => {
   const buttonText =
     kamarJatuhTempo > 0 ? "Cek Data Penghuni" : "Tambah Penghuni";
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5">
@@ -86,7 +142,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
           <div className="flex flex-col">
             <h1 className="text-3xl text-center sm:text-left sm:text-4xl font-extrabold text-gray-900 mt-2 sm:mt-0 mb-2">
-              {kosData.namaKos}
+              {kosData?.nama_kos || "Kos Anda"}
             </h1>
             <p className="text-gray-600 sm:mt-1 text-center sm:text-left mb-2">
               Paket lisensi: Gratis
@@ -170,9 +226,9 @@ const Dashboard = () => {
       <div className="flex justify-center mt-5">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-xl transition-all mt-5"
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-xl transition-all mt-5 transform hover:scale-105"
         >
-          <TbLogout2 /> Keluar
+          <TbLogout2 className="text-xl" /> Keluar
         </button>
       </div>
     </div>

@@ -20,24 +20,46 @@ import {
   formatCurrency,
   akhiriSewaKos,
 } from "../../data";
+import { createClient } from "@/utils/supabase/client";
 
-interface KontakDarurat {
+const supabase = createClient();
+
+interface KontakDaruratData {
   nama: string;
-  tipe: KontakDaruratType;
-  noHP: string;
+  tipe: string;
+  nomor_hp: string;
+}
+
+interface DatabasePenghuni {
+  id: number;
+  kos_id: number;
+  nama: string;
+  nomor_kamar: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  nomor_hp: string;
+  nomor_ktp: string | null;
+  deposit: string | null;
+  kontak_darurat: KontakDaruratData;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface PenghuniData {
-  id: number;
+  id: string;
+  kos_id: string;
   nama: string;
-  noKamar: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-  noHP: string;
-  noKTP?: string;
-  deposit?: string;
-  kontakDarurat?: KontakDarurat;
-  noTelp?: string;
+  nomor_kamar: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  nomor_hp: string;
+  nomor_ktp: string | null;
+  deposit: string | null;
+  kontak_darurat: KontakDaruratData;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function DetailPenghuni({
@@ -56,40 +78,62 @@ export default function DetailPenghuni({
   const [toastMessage, setToastMessage] = useState("");
   const [formData, setFormData] = useState({
     nama: "",
-    noKamar: "",
-    tanggalMulai: "",
-    tanggalSelesai: "",
-    noHP: "",
-    noKTP: "",
+    nomor_kamar: "",
+    tanggal_mulai: "",
+    tanggal_selesai: "",
+    nomor_hp: "",
+    nomor_ktp: "",
     deposit: "",
-    kontakDaruratNama: "",
-    kontakDaruratTipe: "",
-    kontakDaruratNoHP: "",
-    nominalPembayaran: "",
+    kontak_darurat_nama: "",
+    kontak_darurat_tipe: "",
+    kontak_darurat_nomor_hp: "",
+    nominal_pembayaran: "",
   });
   const [templatePesan, setTemplatePesan] = useState("");
 
   useEffect(() => {
-    const daftarPenghuni = getDaftarPenghuni();
-    const penghuniData = daftarPenghuni.find(
-      (p) => p.id === parseInt(resolvedParams.id)
-    );
-    setPenghuni(penghuniData || null);
-    if (penghuniData) {
-      setFormData({
-        nama: penghuniData.nama || "",
-        noKamar: penghuniData.noKamar || "",
-        tanggalMulai: penghuniData.tanggalMulai || "",
-        tanggalSelesai: penghuniData.tanggalSelesai || "",
-        noHP: penghuniData.noHP || "",
-        noKTP: penghuniData.noKTP || "",
-        deposit: penghuniData.deposit || "",
-        kontakDaruratNama: penghuniData.kontakDarurat?.nama || "",
-        kontakDaruratTipe: penghuniData.kontakDarurat?.tipe || "",
-        kontakDaruratNoHP: penghuniData.kontakDarurat?.noHP || "",
-        nominalPembayaran: "",
-      });
-    }
+    const fetchPenghuni = async () => {
+      try {
+        const { data: penghuniData, error } = await supabase
+          .from("penghuni")
+          .select("*")
+          .eq("id", resolvedParams.id)
+          .single();
+
+        if (error) throw error;
+
+        // Pastikan data yang diterima sesuai dengan interface PenghuniData
+        const dbPenghuni = penghuniData as DatabasePenghuni;
+        const formattedPenghuni: PenghuniData = {
+          ...dbPenghuni,
+          id: dbPenghuni.id.toString(),
+          kos_id: dbPenghuni.kos_id.toString(),
+        };
+
+        setPenghuni(formattedPenghuni);
+
+        if (formattedPenghuni) {
+          setFormData({
+            nama: formattedPenghuni.nama || "",
+            nomor_kamar: formattedPenghuni.nomor_kamar || "",
+            tanggal_mulai: formattedPenghuni.tanggal_mulai || "",
+            tanggal_selesai: formattedPenghuni.tanggal_selesai || "",
+            nomor_hp: formattedPenghuni.nomor_hp || "",
+            nomor_ktp: formattedPenghuni.nomor_ktp || "",
+            deposit: formattedPenghuni.deposit || "",
+            kontak_darurat_nama: formattedPenghuni.kontak_darurat?.nama || "",
+            kontak_darurat_tipe: formattedPenghuni.kontak_darurat?.tipe || "",
+            kontak_darurat_nomor_hp:
+              formattedPenghuni.kontak_darurat?.nomor_hp || "",
+            nominal_pembayaran: "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching penghuni:", error);
+      }
+    };
+
+    fetchPenghuni();
   }, [resolvedParams.id]);
 
   useEffect(() => {
@@ -104,7 +148,7 @@ export default function DetailPenghuni({
   }, []);
 
   const handleBack = () => {
-    router.back();
+    router.push("/dashboard/penghuni");
   };
 
   const handleInputChange = (
@@ -119,104 +163,252 @@ export default function DetailPenghuni({
     }));
   };
 
-  const handleEditSubmit = (event: FormEvent) => {
+  const handleEditSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (penghuni) {
-      // Persiapkan data kontak darurat
-      let kontakDaruratData: KontakDarurat | undefined;
-
-      // Jika ada data kontak darurat
-      if (
-        formData.kontakDaruratNama ||
-        formData.kontakDaruratTipe ||
-        formData.kontakDaruratNoHP
-      ) {
-        kontakDaruratData = {
-          nama: formData.kontakDaruratNama,
-          tipe: formData.kontakDaruratTipe as KontakDaruratType,
-          noHP: formData.kontakDaruratNoHP,
+      try {
+        // Persiapkan data kontak darurat
+        const kontakDaruratData: KontakDaruratData = {
+          nama: formData.kontak_darurat_nama,
+          tipe: formData.kontak_darurat_tipe,
+          nomor_hp: formData.kontak_darurat_nomor_hp,
         };
+
+        // Edit data penghuni
+        const { data: updatedPenghuni, error } = await supabase
+          .from("penghuni")
+          .update({
+            nama: formData.nama,
+            nomor_kamar: formData.nomor_kamar,
+            tanggal_mulai: formData.tanggal_mulai,
+            tanggal_selesai: formData.tanggal_selesai,
+            nomor_hp: formData.nomor_hp,
+            nomor_ktp: formData.nomor_ktp,
+            deposit: formData.deposit,
+            kontak_darurat: kontakDaruratData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", penghuni.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (updatedPenghuni) {
+          const formattedUpdatedPenghuni: PenghuniData = {
+            ...updatedPenghuni,
+            id: updatedPenghuni.id.toString(),
+            kos_id: updatedPenghuni.kos_id.toString(),
+          };
+          setPenghuni(formattedUpdatedPenghuni);
+        }
+
+        // Tampilkan notifikasi
+        setToastMessage("Berhasil menyimpan data");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } catch (error) {
+        console.error("Error:", error);
+        setToastMessage("Gagal menyimpan data");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
       }
-
-      // Edit data penghuni
-      const updatedData = editPenghuni(penghuni.id, {
-        nama: formData.nama,
-        noKamar: formData.noKamar,
-        tanggalMulai: formData.tanggalMulai,
-        tanggalSelesai: formData.tanggalSelesai,
-        noHP: formData.noHP,
-        noKTP: formData.noKTP,
-        deposit: formData.deposit,
-        kontakDarurat: kontakDaruratData,
-      });
-
-      // Update state dengan data terbaru
-      const updatedPenghuni = updatedData.find((p) => p.id === penghuni.id);
-      if (updatedPenghuni) {
-        setPenghuni(updatedPenghuni);
-      }
-
-      // Tampilkan notifikasi
-      setToastMessage("Berhasil menyimpan data");
-      setShowToast(true);
-
-      // Sembunyikan notifikasi setelah 3 detik
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
+      setIsEditModalOpen(false);
     }
-    setIsEditModalOpen(false);
   };
 
-  const handlePerpanjangSubmit = (event: FormEvent) => {
+  const handlePerpanjangSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (penghuni) {
-      // Perpanjang masa kos
-      const updatedData = perpanjangKos(penghuni.id, formData.tanggalSelesai);
+      try {
+        // Update tanggal selesai penghuni
+        const { data: updatedPenghuni, error: updateError } = await supabase
+          .from("penghuni")
+          .update({
+            tanggal_selesai: formData.tanggal_selesai,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", penghuni.id)
+          .select()
+          .single();
 
-      // Tambah riwayat pembayaran
-      if (formData.nominalPembayaran) {
-        tambahRiwayatPembayaran({
-          idPenghuni: penghuni.id,
-          tanggal: new Date().toISOString(),
-          nominal: formatCurrency(formData.nominalPembayaran),
-          jenis: "Perpanjangan",
-        });
+        if (updateError) throw updateError;
+
+        // Tambah riwayat pembayaran
+        if (formData.nominal_pembayaran) {
+          const jumlahPembayaran = parseInt(
+            formData.nominal_pembayaran.replace(/[^0-9]/g, ""),
+            10
+          );
+
+          const pembayaranData = {
+            kos_id: parseInt(penghuni.kos_id),
+            penghuni_id: parseInt(penghuni.id),
+            jenis: "pemasukan" as const,
+            kategori: "perpanjangan" as const,
+            deskripsi: `Perpanjangan sewa dari ${penghuni.nama}`,
+            jumlah: jumlahPembayaran,
+            tanggal: new Date().toISOString().split("T")[0],
+            keterangan: `Perpanjangan sewa kamar ${penghuni.nomor_kamar}`,
+            status: "aktif" as const,
+          };
+
+          const { error: pembayaranError } = await supabase
+            .from("keuangan")
+            .insert(pembayaranData);
+
+          if (pembayaranError) throw pembayaranError;
+        }
+
+        // Update state dengan memastikan tipe data yang benar
+        if (updatedPenghuni) {
+          const dbPenghuni = updatedPenghuni as DatabasePenghuni;
+          const formattedUpdatedPenghuni: PenghuniData = {
+            ...dbPenghuni,
+            id: dbPenghuni.id.toString(),
+            kos_id: dbPenghuni.kos_id.toString(),
+          };
+          setPenghuni(formattedUpdatedPenghuni);
+        }
+
+        // Tampilkan notifikasi
+        setToastMessage("Berhasil memperpanjang sewa kos");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+
+        setIsPerpanjangModalOpen(false);
+      } catch (error) {
+        console.error("Error:", error);
+        setToastMessage("Gagal memperpanjang sewa kos");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
       }
-
-      // Update state dengan data terbaru
-      const updatedPenghuni = updatedData.find((p) => p.id === penghuni.id);
-      if (updatedPenghuni) {
-        setPenghuni(updatedPenghuni);
-      }
-
-      // Tampilkan notifikasi
-      setToastMessage("Berhasil memperpanjang sewa kos");
-      setShowToast(true);
-
-      // Sembunyikan notifikasi setelah 3 detik
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
     }
-    setIsPerpanjangModalOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (penghuni) {
-      hapusPenghuni(penghuni.id);
-      setIsDeleteModalOpen(false);
-      setPenghuni(null);
+      try {
+        // Log ID yang akan dihapus
+        console.log("ID penghuni yang akan dihapus:", penghuni.id);
+        console.log("Tipe data ID:", typeof penghuni.id);
+
+        // Konversi ID ke numerik
+        const numericId = parseInt(penghuni.id);
+        console.log("ID numerik:", numericId);
+        console.log("Tipe data ID numerik:", typeof numericId);
+
+        // Cek data penghuni yang akan dihapus
+        const { data: penghuniToDelete, error: checkError } = await supabase
+          .from("penghuni")
+          .select("*")
+          .eq("id", numericId)
+          .single();
+
+        console.log("Data penghuni yang akan dihapus:", penghuniToDelete);
+        if (checkError) {
+          console.error("Error saat memeriksa penghuni:", checkError);
+        }
+
+        // Periksa apakah ada data keuangan terkait
+        const { data: keuanganData, error: keuanganError } = await supabase
+          .from("keuangan")
+          .select("id")
+          .eq("penghuni_id", numericId);
+
+        if (keuanganData && keuanganData.length > 0) {
+          console.log(
+            "Ada data keuangan terkait:",
+            keuanganData.length,
+            "entri"
+          );
+
+          // Hapus data keuangan terkait terlebih dahulu
+          const { error: deleteKeuanganError } = await supabase
+            .from("keuangan")
+            .delete()
+            .eq("penghuni_id", numericId);
+
+          if (deleteKeuanganError) {
+            console.error(
+              "Error saat menghapus data keuangan:",
+              deleteKeuanganError
+            );
+            throw new Error("Gagal menghapus data keuangan terkait");
+          }
+
+          console.log("Berhasil menghapus data keuangan terkait");
+        }
+
+        // Lakukan penghapusan penghuni
+        const { error } = await supabase
+          .from("penghuni")
+          .delete()
+          .eq("id", numericId);
+
+        if (error) {
+          console.error("Error detail saat menghapus penghuni:", error);
+          throw error;
+        }
+
+        // Jika berhasil, update UI
+        console.log("Berhasil menghapus penghuni dengan ID:", numericId);
+        setToastMessage("Berhasil menghapus data penghuni");
+        setShowToast(true);
+        setTimeout(() => {
+          setIsDeleteModalOpen(false);
+          router.push("/dashboard/penghuni");
+        }, 1000);
+      } catch (error) {
+        console.error("Error lengkap:", error);
+        setToastMessage(
+          error instanceof Error
+            ? `Gagal menghapus data penghuni: ${error.message}`
+            : "Gagal menghapus data penghuni"
+        );
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
     }
   };
 
   const handleAkhiriSewa = () => {
-    if (penghuni) {
-      // Pindahkan ke daftar penghuni lama
-      akhiriSewaKos(penghuni.id);
-      setIsAkhiriSewaModalOpen(false);
-      router.push("/dashboard/penghuni-lama");
+    setIsAkhiriSewaModalOpen(true);
+  };
+
+  const handleAkhiriSewaConfirm = async () => {
+    if (!penghuni) return;
+
+    try {
+      const { error } = await supabase
+        .from("penghuni")
+        .update({ status: "tidak aktif", updated_at: new Date().toISOString() })
+        .eq("id", parseInt(penghuni.id));
+
+      if (error) {
+        console.error("Error mengakhiri sewa:", error);
+        setToastMessage("Gagal mengakhiri sewa: " + error.message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+
+      setToastMessage("Berhasil mengakhiri sewa kos");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+
+      // Kemudian redirect ke halaman utama
+      setTimeout(() => {
+        router.push("/dashboard/penghuni");
+      }, 1000);
+    } catch (error) {
+      console.error("Error:", error);
+      setToastMessage("Terjadi kesalahan saat mengakhiri sewa");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     }
+
+    setIsAkhiriSewaModalOpen(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -245,11 +437,39 @@ export default function DetailPenghuni({
     return `62${numbers}`;
   };
 
+  // Fungsi untuk menampilkan nomor HP dengan format 0xxx
+  const formatPhoneNumberForDisplay = (phone: string | undefined) => {
+    if (!phone) return "";
+
+    // Hapus semua karakter non-digit
+    let numbers = phone.replace(/\D/g, "");
+
+    // Jika nomor dimulai dengan 62, ubah menjadi 0
+    if (numbers.startsWith("62")) {
+      numbers = "0" + numbers.substring(2);
+    } else if (!numbers.startsWith("0")) {
+      // Jika tidak dimulai dengan 0, tambahkan 0 di depan
+      numbers = "0" + numbers;
+    }
+
+    return numbers;
+  };
+
+  // Fungsi untuk mengubah snake_case menjadi Title Case
+  const formatContactType = (type: string): string => {
+    if (!type) return "";
+    // Ubah dari snake_case menjadi Title Case
+    return type
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
   // Fungsi untuk menampilkan kontak darurat
   const renderKontakDarurat = () => {
-    if (!penghuni?.kontakDarurat) return null;
+    if (!penghuni?.kontak_darurat) return null;
 
-    const kontakDarurat = penghuni.kontakDarurat;
+    const kontakDarurat = penghuni.kontak_darurat;
     return (
       <div className="space-y-1">
         <h2 className="text-gray-600">Kontak Darurat</h2>
@@ -259,14 +479,14 @@ export default function DetailPenghuni({
               {kontakDarurat.nama}
               {kontakDarurat.tipe && (
                 <span className="ml-2 text-sm bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
-                  {kontakDarurat.tipe}
+                  {formatContactType(kontakDarurat.tipe)}
                 </span>
               )}
             </p>
           )}
-          {kontakDarurat.noHP && (
+          {kontakDarurat.nomor_hp && (
             <p className="text-lg font-semibold text-gray-900">
-              {kontakDarurat.noHP}
+              {formatPhoneNumberForDisplay(kontakDarurat.nomor_hp)}
             </p>
           )}
         </div>
@@ -330,7 +550,7 @@ export default function DetailPenghuni({
             <div className="flex flex-col items-center bg-blue-100 p-4 px-9 rounded-xl">
               <FaBed className="text-4xl text-blue-600 mb-1" />
               <span className="text-2xl font-bold text-blue-700">
-                {penghuni.noKamar}
+                {penghuni.nomor_kamar}
               </span>
             </div>
           </div>
@@ -346,26 +566,26 @@ export default function DetailPenghuni({
             <div className="space-y-1">
               <h2 className="text-gray-600">Nomor Kamar</h2>
               <p className="text-lg font-semibold text-gray-900">
-                {penghuni.noKamar}
+                {penghuni.nomor_kamar}
               </p>
             </div>
 
             {/* Nomor HP */}
-            {penghuni.noHP && (
+            {penghuni.nomor_hp && (
               <div className="space-y-1">
                 <h2 className="text-gray-600">Nomor HP</h2>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formatPhoneNumber(penghuni.noHP)}
+                  {formatPhoneNumberForDisplay(penghuni.nomor_hp)}
                 </p>
               </div>
             )}
 
             {/* Nomor KTP */}
-            {penghuni.noKTP && (
+            {penghuni.nomor_ktp && (
               <div className="space-y-1">
                 <h2 className="text-gray-600">Nomor KTP</h2>
                 <p className="text-lg font-semibold text-gray-900">
-                  {penghuni.noKTP}
+                  {penghuni.nomor_ktp}
                 </p>
               </div>
             )}
@@ -388,14 +608,14 @@ export default function DetailPenghuni({
               <div className="space-y-1">
                 <h2 className="text-gray-600">Tanggal Mulai Kos</h2>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formatDate(penghuni.tanggalMulai)}
+                  {formatDate(penghuni.tanggal_mulai)}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <h2 className="text-gray-600">Tanggal Selesai Kos</h2>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formatDate(penghuni.tanggalSelesai)}
+                  {formatDate(penghuni.tanggal_selesai)}
                 </p>
               </div>
             </div>
@@ -404,7 +624,7 @@ export default function DetailPenghuni({
               <h2 className="text-gray-600">Status</h2>
               {(() => {
                 const today = new Date();
-                const selesaiDate = new Date(penghuni.tanggalSelesai);
+                const selesaiDate = new Date(penghuni.tanggal_selesai);
                 const diffTime = selesaiDate.getTime() - today.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -432,11 +652,11 @@ export default function DetailPenghuni({
             <div className="mb-6">
               <a
                 href={`https://api.whatsapp.com/send?phone=${formatPhoneNumber(
-                  penghuni.noHP
+                  penghuni.nomor_hp
                 )}&text=${encodeURIComponent(
                   templatePesan.replace(
                     "[tanggalselesaikos]",
-                    formatDate(penghuni.tanggalSelesai)
+                    formatDate(penghuni.tanggal_selesai)
                   )
                 )}`}
                 target="_blank"
@@ -458,7 +678,7 @@ export default function DetailPenghuni({
               <FaCalendarPlus /> Perpanjang Kos
             </button>
             <button
-              onClick={() => setIsAkhiriSewaModalOpen(true)}
+              onClick={handleAkhiriSewa}
               className="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-5 rounded-lg font-medium transition-colors"
             >
               <FaSignOutAlt /> Akhiri Sewa Kos
@@ -503,8 +723,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="text"
-                  name="noKamar"
-                  value={formData.noKamar}
+                  name="nomor_kamar"
+                  value={formData.nomor_kamar}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -515,8 +735,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="text"
-                  name="noHP"
-                  value={formData.noHP}
+                  name="nomor_hp"
+                  value={formData.nomor_hp}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -527,8 +747,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="text"
-                  name="noKTP"
-                  value={formData.noKTP}
+                  name="nomor_ktp"
+                  value={formData.nomor_ktp}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -546,8 +766,8 @@ export default function DetailPenghuni({
                     </label>
                     <input
                       type="text"
-                      name="kontakDaruratNama"
-                      value={formData.kontakDaruratNama}
+                      name="kontak_darurat_nama"
+                      value={formData.kontak_darurat_nama}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -557,8 +777,8 @@ export default function DetailPenghuni({
                       Hubungan
                     </label>
                     <select
-                      name="kontakDaruratTipe"
-                      value={formData.kontakDaruratTipe}
+                      name="kontak_darurat_tipe"
+                      value={formData.kontak_darurat_tipe}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
@@ -575,8 +795,8 @@ export default function DetailPenghuni({
                     </label>
                     <input
                       type="text"
-                      name="kontakDaruratNoHP"
-                      value={formData.kontakDaruratNoHP}
+                      name="kontak_darurat_nomor_hp"
+                      value={formData.kontak_darurat_nomor_hp}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -603,8 +823,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="date"
-                  name="tanggalMulai"
-                  value={formData.tanggalMulai}
+                  name="tanggal_mulai"
+                  value={formData.tanggal_mulai}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -615,8 +835,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="date"
-                  name="tanggalSelesai"
-                  value={formData.tanggalSelesai}
+                  name="tanggal_selesai"
+                  value={formData.tanggal_selesai}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -653,8 +873,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="date"
-                  name="tanggalSelesai"
-                  value={formData.tanggalSelesai}
+                  name="tanggal_selesai"
+                  value={formData.tanggal_selesai}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -665,8 +885,8 @@ export default function DetailPenghuni({
                 </label>
                 <input
                   type="text"
-                  name="nominalPembayaran"
-                  value={formData.nominalPembayaran}
+                  name="nominal_pembayaran"
+                  value={formData.nominal_pembayaran}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Contoh: 1.200.000"
@@ -730,7 +950,7 @@ export default function DetailPenghuni({
             </p>
             <div className="flex gap-4">
               <button
-                onClick={handleAkhiriSewa}
+                onClick={handleAkhiriSewaConfirm}
                 className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-4 px-4 rounded-lg"
               >
                 Ya, Akhiri Sewa

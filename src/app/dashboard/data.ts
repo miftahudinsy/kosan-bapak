@@ -2,26 +2,25 @@
 
 // Enum untuk tipe kontak darurat
 export enum KontakDaruratType {
-  ORANG_TUA = "Orang Tua",
-  WALI = "Wali",
+  ORANG_TUA = "orang_tua",
+  WALI = "wali",
 }
 
 //Definisikan Interface PenghuniData dengan field tambahan
 export interface PenghuniData {
-  id: number;
+  id: string;
+  kos_id: string;
   nama: string;
-  noKamar: string;
-  noHP: string;
-  noKTP?: string; // Opsional
-  kontakDarurat: {
-    nama: string;
-    tipe: KontakDaruratType;
-    noHP: string;
-  };
-  deposit?: string; // Opsional, disimpan dalam format mata uang Indonesia
-  tanggalMulai: string;
-  tanggalSelesai: string;
-  status: "aktif" | "nonaktif";
+  nomor_kamar: string;
+  nomor_hp: string;
+  nomor_ktp: string;
+  kontak_darurat: string;
+  deposit: number;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Empty initial data array
@@ -122,7 +121,7 @@ export const editPenghuni = (
 export const perpanjangKos = (id: number, tanggalSelesaiBaru: string) => {
   const currentData = getDaftarPenghuni();
   const updatedData = currentData.map((item) =>
-    item.id === id ? { ...item, tanggalSelesai: tanggalSelesaiBaru } : item
+    item.id === id ? { ...item, tanggal_selesai: tanggalSelesaiBaru } : item
   );
   saveDataToLocalStorage(updatedData);
   return updatedData;
@@ -144,10 +143,18 @@ export const getPenghuniById = (id: number): PenghuniData | undefined => {
 
 export interface RiwayatPembayaran {
   id: number;
-  idPenghuni: number;
+  penghuni_id: number;
+  kos_id?: number;
   tanggal: string;
   nominal: string;
-  jenis: "Pembayaran Awal" | "Perpanjangan";
+  jumlah?: number;
+  jenis: "pemasukan";
+  kategori: "pembayaran_awal" | "perpanjangan";
+  deskripsi?: string;
+  keterangan?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Fungsi untuk mendapatkan riwayat pembayaran
@@ -184,10 +191,17 @@ export const hapusRiwayatPembayaran = (id: number) => {
 
 export interface RiwayatPengeluaran {
   id: number;
+  kos_id?: number;
   deskripsi: string;
-  jenis: string;
+  jenis: "pengeluaran";
+  kategori: string;
   tanggal: string;
   nominal: string;
+  jumlah?: number;
+  keterangan?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Fungsi untuk mendapatkan riwayat pengeluaran
@@ -243,7 +257,7 @@ export const akhiriSewaKos = (idPenghuni: number) => {
   if (penghuni) {
     const penghuniLama = {
       ...penghuni,
-      tanggalSelesai: new Date().toISOString().split("T")[0],
+      tanggal_selesai: new Date().toISOString().split("T")[0],
     };
 
     const daftarPenghuniLama = getPenghuniLamaFromLocalStorage();

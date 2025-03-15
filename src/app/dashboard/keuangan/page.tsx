@@ -8,6 +8,7 @@ import {
   FaMoneyBillWave,
   FaCalculator,
 } from "react-icons/fa";
+import { createClient } from "@/utils/supabase/client";
 import {
   getRiwayatPembayaran,
   getDaftarPenghuni,
@@ -20,7 +21,6 @@ import {
   PenghuniData,
   getDaftarPenghuniLama,
 } from "../data";
-import { RiwayatPembayaran } from "../data";
 import dynamic from "next/dynamic";
 
 const TrendChart = dynamic(() => import("./TrendChart"), {
@@ -31,8 +31,21 @@ const ExpensePieChart = dynamic(() => import("./PieChart"), {
   ssr: false,
 });
 
+// Definisikan ulang interface RiwayatPembayaran untuk aplikasi ini
+interface RiwayatPembayaran {
+  id: number;
+  penghuni_id: string; // Gunakan string untuk ID penghuni
+  tanggal: string;
+  nominal: string;
+  jenis: string;
+  kategori: string;
+  keterangan?: string;
+  deskripsi?: string;
+}
+
 const Keuangan = () => {
   const router = useRouter();
+  const supabase = createClient();
   const [riwayatPembayaran, setRiwayatPembayaran] = useState<
     RiwayatPembayaran[]
   >([]);
@@ -84,14 +97,120 @@ const Keuangan = () => {
 
   // Load initial data
   useEffect(() => {
-    const dataPembayaran = getRiwayatPembayaran();
-    const dataPengeluaran = getRiwayatPengeluaran();
-    const dataPenghuni = getDaftarPenghuni();
-    const dataPenghuniLama = getDaftarPenghuniLama();
-    setRiwayatPembayaran(dataPembayaran);
-    setRiwayatPengeluaran(dataPengeluaran);
-    setPenghuni(dataPenghuni);
-    setPenghuniLama(dataPenghuniLama);
+    const fetchData = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+
+        // Dapatkan kos_id user
+        const { data: kosData, error: kosError } = await supabase
+          .from("kos")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+
+        if (kosError || !kosData) {
+          console.error("Error fetching kos:", kosError);
+          return;
+        }
+
+        // Ambil data pembayaran (pemasukan)
+        const { data: pembayaranData, error: pembayaranError } = await supabase
+          .from("keuangan")
+          .select("*")
+          .eq("kos_id", kosData.id)
+          .eq("jenis", "pemasukan");
+
+        if (pembayaranError) {
+          console.error("Error fetching pembayaran:", pembayaranError);
+        } else {
+          // Format data pembayaran untuk state
+          const formattedPembayaran = pembayaranData.map((item: any) => ({
+            id: item.id,
+            penghuni_id: item.penghuni_id.toString(),
+            tanggal: item.tanggal,
+            nominal: item.jumlah.toString(),
+            jenis: item.kategori,
+            kategori: item.kategori,
+            keterangan: item.keterangan || "",
+            deskripsi: item.deskripsi || "",
+          }));
+          setRiwayatPembayaran(formattedPembayaran);
+        }
+
+        // Ambil data pengeluaran
+        const { data: pengeluaranData, error: pengeluaranError } =
+          await supabase
+            .from("keuangan")
+            .select("*")
+            .eq("kos_id", kosData.id)
+            .eq("jenis", "pengeluaran");
+
+        if (pengeluaranError) {
+          console.error("Error fetching pengeluaran:", pengeluaranError);
+        } else {
+          // Format data pengeluaran untuk state
+          const formattedPengeluaran = pengeluaranData.map((item: any) => ({
+            id: item.id,
+            tanggal: item.tanggal,
+            nominal: item.jumlah.toString(),
+            deskripsi: item.deskripsi || "",
+            jenis: item.kategori,
+            kategori: item.kategori,
+            keterangan: item.keterangan || "",
+          }));
+          setRiwayatPengeluaran(formattedPengeluaran);
+        }
+
+        // Ambil data penghuni aktif
+        const { data: penghuniData, error: penghuniError } = await supabase
+          .from("penghuni")
+          .select("*")
+          .eq("kos_id", kosData.id)
+          .eq("status", "aktif");
+
+        if (penghuniError) {
+          console.error("Error fetching penghuni:", penghuniError);
+        } else {
+          // Format data penghuni untuk state
+          const formattedPenghuni = penghuniData.map((item: any) => ({
+            ...item,
+            id: item.id.toString(),
+            kos_id: item.kos_id.toString(),
+          }));
+          setPenghuni(formattedPenghuni);
+        }
+
+        // Ambil data penghuni lama
+        const { data: penghuniLamaData, error: penghuniLamaError } =
+          await supabase
+            .from("penghuni")
+            .select("*")
+            .eq("kos_id", kosData.id)
+            .eq("status", "tidak aktif");
+
+        if (penghuniLamaError) {
+          console.error("Error fetching penghuni lama:", penghuniLamaError);
+        } else {
+          // Format data penghuni lama untuk state
+          const formattedPenghuniLama = penghuniLamaData.map((item: any) => ({
+            ...item,
+            id: item.id.toString(),
+            kos_id: item.kos_id.toString(),
+          }));
+          setPenghuniLama(formattedPenghuniLama);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // Calculate statistics when data changes
@@ -153,7 +272,7 @@ const Keuangan = () => {
 
     // Estimasi Pendapatan Bulanan
     const kamarTerisi = penghuni.filter((p) => {
-      const tanggalSelesai = new Date(p.tanggalSelesai);
+      const tanggalSelesai = new Date(p.tanggal_selesai);
       const sekarang = new Date();
       return tanggalSelesai > sekarang;
     });
@@ -162,7 +281,9 @@ const Keuangan = () => {
       const pembayaranAwal =
         riwayatPembayaran
           .filter(
-            (rp) => rp.idPenghuni === p.id && rp.jenis === "Pembayaran Awal"
+            (rp) =>
+              rp.penghuni_id === p.id.toString() &&
+              rp.kategori === "pembayaran_awal"
           )
           .map((rp) => ensureNumber(rp.nominal))
           .pop() || 0;
@@ -246,6 +367,15 @@ const Keuangan = () => {
     const bulanIni = new Date().getMonth();
     const tahunIni = new Date().getFullYear();
 
+    // Helper function untuk memformat kategori dari snake_case ke Title Case
+    const formatCategoryName = (type: string): string => {
+      if (!type) return "";
+      return type
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    };
+
     // Filter pengeluaran bulan ini
     const pengeluaranBulanIni = riwayatPengeluaran.filter(
       (p) =>
@@ -264,7 +394,7 @@ const Keuangan = () => {
     // Transform ke format yang dibutuhkan pie chart
     const chartData = Object.entries(totalPerKategori)
       .map(([name, value]) => ({
-        name,
+        name: formatCategoryName(name), // Gunakan formatCategoryName untuk membuat format Title Case
         value,
       }))
       .sort((a, b) => b.value - a.value); // Urutkan dari terbesar
@@ -340,10 +470,36 @@ const Keuangan = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (pembayaranToDelete) {
-      const updatedData = hapusRiwayatPembayaran(pembayaranToDelete.id);
-      setRiwayatPembayaran(updatedData);
+      try {
+        // Hapus data dari Supabase
+        const { error } = await supabase
+          .from("keuangan")
+          .delete()
+          .eq("id", pembayaranToDelete.id);
+
+        if (error) {
+          console.error("Error saat menghapus pembayaran:", error);
+          throw error;
+        }
+
+        // Update state
+        setRiwayatPembayaran((prev) =>
+          prev.filter((p) => p.id !== pembayaranToDelete.id)
+        );
+
+        // Tampilkan notifikasi
+        setToastMessage("Berhasil menghapus data pembayaran");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } catch (error) {
+        console.error("Error:", error);
+        setToastMessage("Gagal menghapus data pembayaran");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
+
       setIsDeleteModalOpen(false);
       setPembayaranToDelete(null);
     }
@@ -374,25 +530,107 @@ const Keuangan = () => {
     }));
   };
 
-  const handleSubmitPengeluaran = (e: React.FormEvent) => {
+  const handleSubmitPengeluaran = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedData = tambahRiwayatPengeluaran({
-      ...formData,
-      jenis:
-        formData.jenis === "Lainnya" ? formData.jenisLainnya : formData.jenis,
-      nominal: formatCurrency(formData.nominal),
-    });
-    setRiwayatPengeluaran(updatedData);
-    handleClosePengeluaranModal();
+    try {
+      // Dapatkan kos_id user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
-    // Tampilkan notifikasi
-    setToastMessage("Berhasil menyimpan pengeluaran baru");
-    setShowToast(true);
+      const { data: kosData } = await supabase
+        .from("kos")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
 
-    // Sembunyikan notifikasi setelah 3 detik
-    setTimeout(() => {
-      setShowToast(false);
-    }, 3000);
+      if (!kosData) {
+        throw new Error("Data kos tidak ditemukan");
+      }
+
+      // Persiapkan data untuk disimpan
+      let kategori = "";
+      let keteranganTambahan = "";
+
+      if (formData.jenis === "Lainnya") {
+        if (!formData.jenisLainnya || formData.jenisLainnya.trim() === "") {
+          alert("Silakan isi jenis pengeluaran lainnya");
+          return;
+        }
+        // Gunakan 'lainnya' sebagai kategori yang valid di database
+        kategori = "lainnya";
+        keteranganTambahan = formData.jenisLainnya;
+      } else {
+        kategori = formData.jenis;
+      }
+
+      console.log("Kategori sebelum diproses:", kategori);
+      const formattedKategori = kategori.toLowerCase().replace(/ /g, "_");
+      console.log("Kategori setelah diproses:", formattedKategori);
+
+      const nominal = parseInt(formData.nominal.replace(/\D/g, ""), 10) || 0;
+
+      // Buat keterangan yang mencakup detail kategori kustom jika ada
+      const keterangan = keteranganTambahan
+        ? `Pengeluaran ${keteranganTambahan} untuk ${formData.deskripsi}`
+        : `Pengeluaran untuk ${formData.deskripsi}`;
+
+      const pengeluaranData = {
+        kos_id: kosData.id,
+        jenis: "pengeluaran",
+        kategori: formattedKategori,
+        deskripsi: formData.deskripsi,
+        jumlah: nominal,
+        tanggal: formData.tanggal,
+        keterangan: keterangan,
+        status: "aktif",
+      };
+
+      console.log("Data pengeluaran yang akan disimpan:", pengeluaranData);
+
+      // Simpan ke Supabase
+      const { data: newPengeluaran, error } = await supabase
+        .from("keuangan")
+        .insert(pengeluaranData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error saat menyimpan pengeluaran:", error);
+        throw error;
+      }
+
+      // Format data untuk state
+      const formattedPengeluaran = {
+        id: newPengeluaran.id,
+        tanggal: newPengeluaran.tanggal,
+        nominal: newPengeluaran.jumlah.toString(),
+        deskripsi: newPengeluaran.deskripsi || "",
+        jenis: newPengeluaran.kategori,
+        kategori: newPengeluaran.kategori,
+        keterangan: newPengeluaran.keterangan || "",
+      };
+
+      // Update state
+      setRiwayatPengeluaran((prev) => [...prev, formattedPengeluaran]);
+
+      // Tampilkan notifikasi
+      setToastMessage("Berhasil menyimpan pengeluaran baru");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+
+      // Reset form dan tutup modal
+      handleClosePengeluaranModal();
+    } catch (error) {
+      console.error("Error:", error);
+      setToastMessage("Gagal menyimpan pengeluaran baru");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -405,12 +643,25 @@ const Keuangan = () => {
     return date.toLocaleDateString("id-ID", options);
   };
 
-  const getNamaPenghuni = (idPenghuni: number) => {
-    const penghuniData = penghuni.find((p) => p.id === idPenghuni);
-    if (penghuniData) return penghuniData.nama;
+  const getNamaPenghuni = (idPenghuni: number | string) => {
+    // Coba cari dengan ID string (karena di state kita menyimpan ID sebagai string)
+    const idString = idPenghuni.toString();
 
-    const penghuniLamaData = penghuniLama.find((p) => p.id === idPenghuni);
-    return penghuniLamaData ? penghuniLamaData.nama : "Tidak ditemukan";
+    // Cari di penghuni aktif (pastikan id di array juga string)
+    const penghuniData = penghuni.find((p) => p.id.toString() === idString);
+    if (penghuniData) {
+      return penghuniData.nama;
+    }
+
+    // Cari di penghuni lama (pastikan id di array juga string)
+    const penghuniLamaData = penghuniLama.find(
+      (p) => p.id.toString() === idString
+    );
+    if (penghuniLamaData) {
+      return penghuniLamaData.nama;
+    }
+
+    return "Tidak ditemukan";
   };
 
   const handleDeletePengeluaranClick = (pengeluaran: RiwayatPengeluaran) => {
@@ -418,13 +669,49 @@ const Keuangan = () => {
     setIsDeletePengeluaranModalOpen(true);
   };
 
-  const handleDeletePengeluaran = () => {
+  const handleDeletePengeluaran = async () => {
     if (pengeluaranToDelete) {
-      const updatedData = hapusRiwayatPengeluaran(pengeluaranToDelete.id);
-      setRiwayatPengeluaran(updatedData);
+      try {
+        // Hapus data dari Supabase
+        const { error } = await supabase
+          .from("keuangan")
+          .delete()
+          .eq("id", pengeluaranToDelete.id);
+
+        if (error) {
+          console.error("Error saat menghapus pengeluaran:", error);
+          throw error;
+        }
+
+        // Update state
+        setRiwayatPengeluaran((prev) =>
+          prev.filter((p) => p.id !== pengeluaranToDelete.id)
+        );
+
+        // Tampilkan notifikasi
+        setToastMessage("Berhasil menghapus data pengeluaran");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } catch (error) {
+        console.error("Error:", error);
+        setToastMessage("Gagal menghapus data pengeluaran");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
+
       setIsDeletePengeluaranModalOpen(false);
       setPengeluaranToDelete(null);
     }
+  };
+
+  // Format jenis pembayaran dari snake_case menjadi Title Case
+  const formatPaymentType = (type: string): string => {
+    if (!type) return "";
+    // Ubah dari snake_case menjadi Title Case
+    return type
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   return (
@@ -556,7 +843,7 @@ const Keuangan = () => {
           <div className="bg-white rounded-2xl shadow-sm mb-10 overflow-hidden">
             <div className="p-4 border-b border-gray-100 ">
               <h2 className="text-2xl font-bold text-gray-900">
-                Kategori Pengeluaran Bulan Ini
+                Kategori Pengeluaran
               </h2>
               <p className="text-base text-gray-500 mt-1">
                 Pengeluaran bulan ini berdasarkan kategori
@@ -639,10 +926,10 @@ const Keuangan = () => {
                             {formatDate(pembayaran.tanggal)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {getNamaPenghuni(pembayaran.idPenghuni)}
+                            {getNamaPenghuni(pembayaran.penghuni_id)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {pembayaran.jenis}
+                            {formatPaymentType(pembayaran.jenis)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
                             {formatCurrency(pembayaran.nominal)}
@@ -714,7 +1001,7 @@ const Keuangan = () => {
                             Nama Penghuni
                           </p>
                           <p className="text-base font-medium text-gray-900">
-                            {getNamaPenghuni(pembayaran.idPenghuni)}
+                            {getNamaPenghuni(pembayaran.penghuni_id)}
                           </p>
                         </div>
                         <div>
@@ -722,7 +1009,7 @@ const Keuangan = () => {
                             Jenis Pembayaran
                           </p>
                           <p className="text-base font-medium text-gray-900">
-                            {pembayaran.jenis}
+                            {formatPaymentType(pembayaran.jenis)}
                           </p>
                         </div>
                         <div>
@@ -797,7 +1084,7 @@ const Keuangan = () => {
                           Deskripsi
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Jenis
+                          Kategori
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Nominal
@@ -817,7 +1104,7 @@ const Keuangan = () => {
                             {pengeluaran.deskripsi}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {pengeluaran.jenis}
+                            {formatPaymentType(pengeluaran.jenis)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
                             {formatCurrency(pengeluaran.nominal)}
@@ -897,7 +1184,7 @@ const Keuangan = () => {
                         <div>
                           <p className="text-base text-gray-500">Jenis</p>
                           <p className="text-base font-medium text-gray-900">
-                            {pengeluaran.jenis}
+                            {formatPaymentType(pengeluaran.jenis)}
                           </p>
                         </div>
                         <div>
@@ -1039,6 +1326,7 @@ const Keuangan = () => {
                   <option value="Listrik">Listrik</option>
                   <option value="Air">Air</option>
                   <option value="Wifi">Wifi</option>
+                  <option value="Perbaikan">Perbaikan</option>
                   <option value="Lainnya">Lainnya</option>
                 </select>
               </div>

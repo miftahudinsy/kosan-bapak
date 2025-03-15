@@ -29,19 +29,19 @@ const Home = () => {
 
         <div className="z-10 text-center space-y-6">
           <h1 className="text-4xl sm:text-6xl font-bold text-blue-700 mb-3">
-            KosanBapak
+            Kosan Bapak
           </h1>
           <p className="text-xl sm:text-2xl text-gray-600 mb-10">
             Kelola kos-kosan jadi gampang.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-blue-600 text-white text-lg px-8 py-3 rounded-full font-semibold shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl">
-              Masuk
-            </button>
             <button
               onClick={() => router.push("/dashboard")}
-              className="bg-white text-blue-600 text-lg px-8 py-3 rounded-full font-semibold shadow-lg transition-all hover:bg-gray-50"
+              className="bg-blue-600 text-white text-lg px-8 py-3 rounded-full font-semibold shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl"
             >
+              Masuk
+            </button>
+            <button className="bg-white text-blue-600 text-lg px-8 py-3 rounded-full font-semibold shadow-lg transition-all hover:bg-gray-50">
               Coba Akun Demo
             </button>
           </div>

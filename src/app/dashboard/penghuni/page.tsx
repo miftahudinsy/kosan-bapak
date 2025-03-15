@@ -2,63 +2,116 @@
 import { useRouter } from "next/navigation";
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { FaBed, FaArrowLeft, FaPlus, FaHistory } from "react-icons/fa";
-import {
-  getDaftarPenghuni,
-  tambahPenghuni,
-  PenghuniData,
-  KontakDaruratType,
-  formatCurrency,
-  tambahRiwayatPembayaran,
-} from "../data";
+import { createClient } from "@/utils/supabase/client";
+import { KontakDaruratType } from "../data";
+
+interface PenghuniData {
+  id: string;
+  kos_id: string;
+  nama: string;
+  nomor_kamar: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  nomor_hp: string;
+  nomor_ktp: string | null;
+  deposit: string | null;
+  kontak_darurat: {
+    nama: string;
+    tipe: KontakDaruratType;
+    nomor_hp: string;
+  };
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface FormData {
   nama: string;
-  noKamar: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-  noHP: string;
-  noKTP: string;
+  nomor_kamar: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  nomor_hp: string;
+  nomor_ktp: string;
   deposit: string;
-  kontakDaruratNama: string;
-  kontakDaruratTipe: KontakDaruratType;
-  kontakDaruratNoHP: string;
-  nominalPembayaran: string;
+  kontak_darurat_nama: string;
+  kontak_darurat_tipe: KontakDaruratType;
+  kontak_darurat_nomor_hp: string;
+  nominal_pembayaran: string;
 }
 
 const Penghuni = () => {
   const router = useRouter();
+  const supabase = createClient();
   const [penghuni, setPenghuni] = useState<PenghuniData[]>([]);
+  const [kosData, setKosData] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     nama: "",
-    noKamar: "",
-    tanggalMulai: "",
-    tanggalSelesai: "",
-    noHP: "",
-    noKTP: "",
+    nomor_kamar: "",
+    tanggal_mulai: "",
+    tanggal_selesai: "",
+    nomor_hp: "",
+    nomor_ktp: "",
     deposit: "",
-    kontakDaruratNama: "",
-    kontakDaruratTipe: "Keluarga" as KontakDaruratType,
-    kontakDaruratNoHP: "",
-    nominalPembayaran: "",
+    kontak_darurat_nama: "",
+    kontak_darurat_tipe: "orang_tua" as KontakDaruratType,
+    kontak_darurat_nomor_hp: "",
+    nominal_pembayaran: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  // Load data from localStorage on component mount
+  // Load data from Supabase on component mount
   useEffect(() => {
-    const loadedData = getDaftarPenghuni();
-    setPenghuni(loadedData);
+    async function loadData() {
+      // Get user and kos data
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const { data: kosData, error: kosError } = await supabase
+        .from("kos")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (kosError || !kosData) {
+        console.error("Error fetching kos:", kosError);
+        return;
+      }
+
+      setKosData(kosData);
+
+      // Get penghuni data
+      const { data: penghuniData, error: penghuniError } = await supabase
+        .from("penghuni")
+        .select("*")
+        .eq("kos_id", kosData.id)
+        .eq("status", "aktif");
+
+      if (penghuniError) {
+        console.error("Error fetching penghuni:", penghuniError);
+        return;
+      }
+
+      setPenghuni(penghuniData || []);
+    }
+
+    loadData();
   }, []);
 
-  const handleKamarClick = (id: number) => {
-    router.push(`/dashboard/penghuni/${id}`);
+  const handleBack = () => {
+    router.push("/dashboard");
   };
 
-  const handleBack = () => {
-    router.back();
+  const handleKamarClick = (id: string) => {
+    router.push(`/dashboard/penghuni/${id}`);
   };
 
   const handleTambahPenghuniClick = () => {
@@ -73,16 +126,16 @@ const Penghuni = () => {
     setIsModalOpen(false);
     setFormData({
       nama: "",
-      noKamar: "",
-      tanggalMulai: "",
-      tanggalSelesai: "",
-      noHP: "",
-      noKTP: "",
+      nomor_kamar: "",
+      tanggal_mulai: "",
+      tanggal_selesai: "",
+      nomor_hp: "",
+      nomor_ktp: "",
       deposit: "",
-      kontakDaruratNama: "",
-      kontakDaruratTipe: "Keluarga" as KontakDaruratType,
-      kontakDaruratNoHP: "",
-      nominalPembayaran: "",
+      kontak_darurat_nama: "",
+      kontak_darurat_tipe: "orang_tua" as KontakDaruratType,
+      kontak_darurat_nomor_hp: "",
+      nominal_pembayaran: "",
     });
   };
 
@@ -100,67 +153,114 @@ const Penghuni = () => {
     }));
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    // Tambah data penghuni
-    const updatedData = tambahPenghuni({
-      nama: formData.nama,
-      noKamar: formData.noKamar,
-      tanggalMulai: formData.tanggalMulai,
-      tanggalSelesai: formData.tanggalSelesai,
-      noHP: formData.noHP,
-      noKTP: formData.noKTP,
-      deposit: formData.deposit,
-      kontakDarurat: {
-        nama: formData.kontakDaruratNama || "",
-        tipe:
-          (formData.kontakDaruratTipe as KontakDaruratType) ||
-          KontakDaruratType.ORANG_TUA,
-        noHP: formData.kontakDaruratNoHP || "",
-      },
-      status: "aktif",
-    });
+    try {
+      // Validasi input
+      if (
+        !formData.nama ||
+        !formData.nomor_kamar ||
+        !formData.tanggal_mulai ||
+        !formData.tanggal_selesai ||
+        !formData.nomor_hp ||
+        !formData.kontak_darurat_nama ||
+        !formData.kontak_darurat_nomor_hp ||
+        !formData.nominal_pembayaran
+      ) {
+        throw new Error("Mohon lengkapi semua field yang wajib diisi");
+      }
 
-    // Tambah riwayat pembayaran
-    if (formData.nominalPembayaran) {
-      const newPenghuni = updatedData[updatedData.length - 1];
-      tambahRiwayatPembayaran({
-        idPenghuni: newPenghuni.id,
-        tanggal: new Date().toISOString(),
-        nominal: formatCurrency(formData.nominalPembayaran),
-        jenis: "Pembayaran Awal",
+      // Format data penghuni
+      const penghuniData = {
+        kos_id: kosData.id,
+        nama: formData.nama,
+        nomor_kamar: formData.nomor_kamar,
+        tanggal_mulai: formData.tanggal_mulai,
+        tanggal_selesai: formData.tanggal_selesai,
+        nomor_hp: formData.nomor_hp,
+        nomor_ktp: formData.nomor_ktp || null,
+        deposit: formData.deposit || null,
+        kontak_darurat: {
+          nama: formData.kontak_darurat_nama,
+          tipe: formData.kontak_darurat_tipe,
+          nomor_hp: formData.kontak_darurat_nomor_hp,
+        },
+        status: "aktif",
+      };
+
+      console.log("Data yang akan dikirim:", penghuniData);
+
+      // Insert penghuni data
+      const { data: newPenghuniData, error: penghuniError } = await supabase
+        .from("penghuni")
+        .insert(penghuniData)
+        .select()
+        .single();
+
+      if (penghuniError) {
+        console.error("Error detail:", penghuniError);
+        throw new Error(`Gagal menambahkan penghuni: ${penghuniError.message}`);
+      }
+
+      // Insert pembayaran data
+      const pembayaranData = {
+        kos_id: kosData.id,
+        penghuni_id: newPenghuniData.id,
+        jenis: "pemasukan",
+        kategori: "pembayaran_awal",
+        deskripsi: `Pembayaran awal dari ${formData.nama}`,
+        jumlah: parseInt(formData.nominal_pembayaran.replace(/[^0-9]/g, "")),
+        tanggal: new Date().toISOString().split("T")[0],
+        keterangan: `Pembayaran sewa kamar ${formData.nomor_kamar}`,
+        status: "aktif",
+      };
+
+      const { error: pembayaranError } = await supabase
+        .from("keuangan")
+        .insert(pembayaranData);
+
+      if (pembayaranError) {
+        console.error("Error detail pembayaran:", pembayaranError);
+        throw new Error(
+          `Gagal menambahkan pembayaran: ${pembayaranError.message}`
+        );
+      }
+
+      // Update UI
+      setPenghuni((prev) => [...prev, newPenghuniData]);
+
+      // Reset form
+      setFormData({
+        nama: "",
+        nomor_kamar: "",
+        tanggal_mulai: "",
+        tanggal_selesai: "",
+        nomor_hp: "",
+        nomor_ktp: "",
+        deposit: "",
+        kontak_darurat_nama: "",
+        kontak_darurat_tipe: "orang_tua" as KontakDaruratType,
+        kontak_darurat_nomor_hp: "",
+        nominal_pembayaran: "",
       });
+
+      setIsModalOpen(false);
+
+      // Show success notification
+      setToastMessage("Berhasil menambahkan penghuni baru");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      console.error("Error lengkap:", error);
+      setToastMessage(
+        error instanceof Error
+          ? error.message
+          : "Gagal menambahkan penghuni baru"
+      );
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     }
-
-    // Update the UI with the new data
-    setPenghuni(updatedData);
-
-    // Reset form
-    setFormData({
-      nama: "",
-      noKamar: "",
-      tanggalMulai: "",
-      tanggalSelesai: "",
-      noHP: "",
-      noKTP: "",
-      deposit: "",
-      kontakDaruratNama: "",
-      kontakDaruratTipe: "Keluarga" as KontakDaruratType,
-      kontakDaruratNoHP: "",
-      nominalPembayaran: "",
-    });
-
-    setIsModalOpen(false);
-
-    // Tampilkan notifikasi
-    setToastMessage("Berhasil menambahkan penghuni baru");
-    setShowToast(true);
-
-    // Sembunyikan notifikasi setelah 3 detik
-    setTimeout(() => {
-      setShowToast(false);
-    }, 3000);
   };
 
   const formatDate = (dateString: string) => {
@@ -263,15 +363,15 @@ const Penghuni = () => {
                     penghuni.nama
                       .toLowerCase()
                       .includes(searchTerm.toLowerCase()) ||
-                    penghuni.noKamar
+                    penghuni.nomor_kamar
                       .toLowerCase()
                       .includes(searchTerm.toLowerCase())
                 )
                 .sort(
                   (a, b) =>
-                    new Date(a.tanggalSelesai).getTime() -
-                    new Date(b.tanggalSelesai).getTime()
-                ) // Sort by tanggalSelesai
+                    new Date(a.tanggal_selesai).getTime() -
+                    new Date(b.tanggal_selesai).getTime()
+                ) // Sort by tanggal_selesai
                 .map((penghuni) => (
                   <button
                     key={penghuni.id}
@@ -287,12 +387,14 @@ const Penghuni = () => {
                         <p className="text-gray-600">
                           Kos sampai:{" "}
                           <span className="font-medium">
-                            {formatDate(penghuni.tanggalSelesai)}
+                            {formatDate(penghuni.tanggal_selesai)}
                           </span>
                         </p>
                         {(() => {
                           const today = new Date();
-                          const selesaiDate = new Date(penghuni.tanggalSelesai);
+                          const selesaiDate = new Date(
+                            penghuni.tanggal_selesai
+                          );
                           const diffTime =
                             selesaiDate.getTime() - today.getTime();
                           const diffDays = Math.ceil(
@@ -323,7 +425,7 @@ const Penghuni = () => {
                       <div className="flex flex-col items-center">
                         <FaBed className="text-3xl text-blue-600 mb-1" />
                         <span className="text-2xl font-bold text-blue-700">
-                          {penghuni.noKamar}
+                          {penghuni.nomor_kamar}
                         </span>
                       </div>
                     </div>
@@ -385,16 +487,16 @@ const Penghuni = () => {
                 {/* Nomor Kamar */}
                 <div className="mb-4">
                   <label
-                    htmlFor="noKamar"
+                    htmlFor="nomor_kamar"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nomor Kamar <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="noKamar"
-                    name="noKamar"
-                    value={formData.noKamar}
+                    id="nomor_kamar"
+                    name="nomor_kamar"
+                    value={formData.nomor_kamar}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nomor Kamar"
@@ -405,16 +507,16 @@ const Penghuni = () => {
                 {/* Nomor HP */}
                 <div className="mb-4">
                   <label
-                    htmlFor="noHP"
+                    htmlFor="nomor_hp"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nomor HP <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="noHP"
-                    name="noHP"
-                    value={formData.noHP}
+                    id="nomor_hp"
+                    name="nomor_hp"
+                    value={formData.nomor_hp}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nomor HP"
@@ -425,16 +527,16 @@ const Penghuni = () => {
                 {/* Nomor KTP (Opsional) */}
                 <div className="mb-4">
                   <label
-                    htmlFor="noKTP"
+                    htmlFor="nomor_ktp"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nomor KTP <span className="text-gray-400">(Opsional)</span>
                   </label>
                   <input
                     type="text"
-                    id="noKTP"
-                    name="noKTP"
-                    value={formData.noKTP}
+                    id="nomor_ktp"
+                    name="nomor_ktp"
+                    value={formData.nomor_ktp}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nomor KTP"
@@ -444,16 +546,16 @@ const Penghuni = () => {
                 {/* Kontak Darurat - Nama */}
                 <div className="mb-4">
                   <label
-                    htmlFor="kontakDaruratNama"
+                    htmlFor="kontak_darurat_nama"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nama Kontak Darurat <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="kontakDaruratNama"
-                    name="kontakDaruratNama"
-                    value={formData.kontakDaruratNama}
+                    id="kontak_darurat_nama"
+                    name="kontak_darurat_nama"
+                    value={formData.kontak_darurat_nama}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nama Kontak Darurat"
@@ -464,15 +566,15 @@ const Penghuni = () => {
                 {/* Kontak Darurat - Tipe */}
                 <div className="mb-4">
                   <label
-                    htmlFor="kontakDaruratTipe"
+                    htmlFor="kontak_darurat_tipe"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Tipe Kontak Darurat <span className="text-red-500">*</span>
                   </label>
                   <select
-                    id="kontakDaruratTipe"
-                    name="kontakDaruratTipe"
-                    value={formData.kontakDaruratTipe}
+                    id="kontak_darurat_tipe"
+                    name="kontak_darurat_tipe"
+                    value={formData.kontak_darurat_tipe}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
@@ -487,7 +589,7 @@ const Penghuni = () => {
                 {/* Kontak Darurat - Nomor HP */}
                 <div className="mb-4">
                   <label
-                    htmlFor="kontakDaruratNoHP"
+                    htmlFor="kontak_darurat_nomor_hp"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nomor HP Kontak Darurat{" "}
@@ -495,9 +597,9 @@ const Penghuni = () => {
                   </label>
                   <input
                     type="text"
-                    id="kontakDaruratNoHP"
-                    name="kontakDaruratNoHP"
-                    value={formData.kontakDaruratNoHP}
+                    id="kontak_darurat_nomor_hp"
+                    name="kontak_darurat_nomor_hp"
+                    value={formData.kontak_darurat_nomor_hp}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Masukkan Nomor HP Kontak Darurat"
@@ -527,16 +629,16 @@ const Penghuni = () => {
                 {/* Tanggal Mulai */}
                 <div className="mb-4">
                   <label
-                    htmlFor="tanggalMulai"
+                    htmlFor="tanggal_mulai"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Tanggal Mulai Kos <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    id="tanggalMulai"
-                    name="tanggalMulai"
-                    value={formData.tanggalMulai}
+                    id="tanggal_mulai"
+                    name="tanggal_mulai"
+                    value={formData.tanggal_mulai}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
@@ -546,16 +648,16 @@ const Penghuni = () => {
                 {/* Tanggal Selesai */}
                 <div className="mb-4">
                   <label
-                    htmlFor="tanggalSelesai"
+                    htmlFor="tanggal_selesai"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Kos Sampai Tanggal <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    id="tanggalSelesai"
-                    name="tanggalSelesai"
-                    value={formData.tanggalSelesai}
+                    id="tanggal_selesai"
+                    name="tanggal_selesai"
+                    value={formData.tanggal_selesai}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
@@ -565,16 +667,16 @@ const Penghuni = () => {
                 {/* Nominal Pembayaran */}
                 <div className="mb-4">
                   <label
-                    htmlFor="nominalPembayaran"
+                    htmlFor="nominal_pembayaran"
                     className="block text-gray-700 font-medium mb-2"
                   >
                     Nominal Pembayaran <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="nominalPembayaran"
-                    name="nominalPembayaran"
-                    value={formData.nominalPembayaran}
+                    id="nominal_pembayaran"
+                    name="nominal_pembayaran"
+                    value={formData.nominal_pembayaran}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
