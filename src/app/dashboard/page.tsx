@@ -68,12 +68,11 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5 ">
         <div className="flex flex-col">
-          <h1 className="text-3xl text-center sm:text-left sm:text-4xl font-extrabold text-gray-900 mt-2 sm:mt-0">
-            Kos Griya Hasana
+          <h1 className="text-3xl text-center sm:text-left sm:text-4xl font-extrabold text-gray-900 mt-2 sm:mt-0 mb-2">
+            Nama Kos Anda Disini
           </h1>
-
           <p className=" text-gray-600 sm:mt-1 text-center sm:text-left mb-2">
-            Anda sebagai: Pemilik kos
+            Paket lisensi: Gartis
           </p>
         </div>
 

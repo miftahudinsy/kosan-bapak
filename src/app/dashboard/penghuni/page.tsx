@@ -638,8 +638,8 @@ const Penghuni = () => {
                 </div>
 
                 <p className="text-gray-600 mb-6">
-                  Oops! Anda hanya bisa menambahkan 5 kamar. Upgrade ke Premium
-                  dan kelola kos Anda tanpa batas!
+                  Oops! Anda hanya bisa menambahkan 5 kamar. Upgrade ke Pro
+                  untuk kelola kos Anda tanpa batas!
                 </p>
                 <button
                   onClick={handleCloseLimitModal}
