@@ -30,6 +30,13 @@ interface KontakDaruratData {
   nomor_hp: string;
 }
 
+interface KosData {
+  template_pesan?: string;
+  nama_kos?: string;
+  jumlah_kamar?: number;
+  [key: string]: any;
+}
+
 interface DatabasePenghuni {
   id: number;
   kos_id: number;
@@ -44,6 +51,7 @@ interface DatabasePenghuni {
   status: string;
   created_at: string;
   updated_at: string;
+  kos?: KosData;
 }
 
 interface PenghuniData {
@@ -96,7 +104,7 @@ export default function DetailPenghuni({
       try {
         const { data: penghuniData, error } = await supabase
           .from("penghuni")
-          .select("*")
+          .select("*, kos:kos_id(template_pesan)")
           .eq("id", resolvedParams.id)
           .single();
 
@@ -111,6 +119,16 @@ export default function DetailPenghuni({
         };
 
         setPenghuni(formattedPenghuni);
+
+        // Ambil template pesan dari hasil join dengan tabel kos
+        if (penghuniData.kos && penghuniData.kos.template_pesan) {
+          setTemplatePesan(penghuniData.kos.template_pesan);
+        } else {
+          // Default template jika tidak ada di database
+          setTemplatePesan(
+            "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar"
+          );
+        }
 
         if (formattedPenghuni) {
           setFormData({
@@ -135,17 +153,6 @@ export default function DetailPenghuni({
 
     fetchPenghuni();
   }, [resolvedParams.id]);
-
-  useEffect(() => {
-    const savedKosData = localStorage.getItem("kosData");
-    if (savedKosData) {
-      const data = JSON.parse(savedKosData);
-      setTemplatePesan(
-        data.templatePesan ||
-          "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar"
-      );
-    }
-  }, []);
 
   const handleBack = () => {
     router.push("/dashboard/penghuni");

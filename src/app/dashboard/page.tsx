@@ -152,7 +152,7 @@ const Dashboard = () => {
           {/* Tombol Pengaturan - Desktop */}
           <button
             onClick={handlePengaturanClick}
-            className="hidden sm:flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
+            className="hidden sm:flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors shadow-md"
           >
             <FaCog className="text-xl text-gray-600" />
             <span className="text-gray-700 font-medium">Pengaturan</span>
@@ -162,7 +162,7 @@ const Dashboard = () => {
         {/* Tombol Pengaturan - Mobile */}
         <button
           onClick={handlePengaturanClick}
-          className="sm:hidden w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-3 rounded-lg transition-colors"
+          className="sm:hidden w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-3 rounded-lg transition-colors shadow-md"
         >
           <FaCog className="text-xl text-gray-600" />
           <span className="text-gray-700 font-medium">Pengaturan</span>

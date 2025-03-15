@@ -3,30 +3,66 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, FormEvent } from "react";
 import { FaArrowLeft, FaMinus, FaPlus } from "react-icons/fa";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Pengaturan() {
   const router = useRouter();
+  const supabase = createClient();
   const [showToast, setShowToast] = useState(false);
   const [showUpgradeMessage, setShowUpgradeMessage] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [kosData, setKosData] = useState<any>(null);
   const [formData, setFormData] = useState({
     namaKos: "",
     jumlahKamar: "1",
-    templatePesan: "",
+    templatePesan:
+      "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
   });
 
   useEffect(() => {
-    // Ambil data dari localStorage
-    const savedKosData = localStorage.getItem("kosData");
-    if (savedKosData) {
-      const data = JSON.parse(savedKosData);
-      setFormData({
-        namaKos: data.namaKos,
-        jumlahKamar: data.jumlahKamar.toString(),
-        templatePesan:
-          data.templatePesan ||
-          "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
-      });
-    }
+    const fetchKosData = async () => {
+      try {
+        setLoading(true);
+        // Dapatkan user saat ini
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+
+        // Ambil data kos
+        const { data, error } = await supabase
+          .from("kos")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Error mengambil data kos:", error);
+          return;
+        }
+
+        if (data) {
+          setKosData(data);
+          setFormData({
+            namaKos: data.nama_kos || "",
+            jumlahKamar: data.jumlah_kamar?.toString() || "1",
+            templatePesan:
+              data.template_pesan ||
+              "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
+          });
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchKosData();
   }, []);
 
   const handleIncrement = () => {
@@ -47,7 +83,7 @@ export default function Pengaturan() {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     // Validasi input
@@ -56,27 +92,58 @@ export default function Pengaturan() {
       return;
     }
 
-    // Simpan ke localStorage dengan template pesan
-    localStorage.setItem(
-      "kosData",
-      JSON.stringify({
-        namaKos: formData.namaKos,
-        jumlahKamar: parseInt(formData.jumlahKamar),
-        templatePesan: formData.templatePesan,
-      })
-    );
+    try {
+      // Dapatkan user saat ini
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    // Tampilkan toast
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      router.push("/dashboard"); // Kembali ke dashboard setelah simpan
-    }, 2000);
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      // Update data kos di database
+      const { error } = await supabase
+        .from("kos")
+        .update({
+          nama_kos: formData.namaKos,
+          jumlah_kamar: parseInt(formData.jumlahKamar),
+          template_pesan: formData.templatePesan,
+        })
+        .eq("id", kosData.id);
+
+      if (error) {
+        console.error("Error menyimpan data:", error);
+        alert("Gagal menyimpan data kos");
+        return;
+      }
+
+      // Tampilkan toast
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        router.push("/dashboard"); // Kembali ke dashboard setelah simpan
+      }, 2000);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Terjadi kesalahan saat menyimpan data");
+    }
   };
 
   const handleBack = () => {
     router.back();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
@@ -179,7 +246,7 @@ export default function Pengaturan() {
                   setFormData({ ...formData, templatePesan: e.target.value })
                 }
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-                placeholder="Contoh: Halo %nama%, ini pengingat untuk pembayaran kos bulan ini."
+                placeholder="Contoh: Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar"
               />
             </div>
 
