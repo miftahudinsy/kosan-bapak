@@ -34,15 +34,34 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    setLoading(true);
+    try {
+      // Clear any existing session cookies first to prevent issues
+      await supabase.auth.signOut();
 
-    if (error) {
-      setError(error.message);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: "select_account",
+            access_type: "offline", // Request refresh token
+          },
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+        console.error("Google login error:", error);
+      } else if (data?.url) {
+        // Redirect manually to Google's auth page
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Error during Google login:", error);
+      setError("Terjadi kesalahan saat login dengan Google");
+    } finally {
+      // We don't set loading to false here because we're redirecting away
     }
   };
 
