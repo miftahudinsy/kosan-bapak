@@ -12,6 +12,7 @@ interface KosData {
   nama_kos: string;
   jumlah_kamar: number;
   template_pesan: string;
+  plan_type?: string;
 }
 
 interface PenghuniData {
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [daftarPenghuni, setDaftarPenghuni] = useState<PenghuniData[]>([]);
   const [kosData, setKosData] = useState<KosData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -60,11 +62,12 @@ const Dashboard = () => {
 
       setKosData(data[0]);
 
-      // Fetch penghuni data
+      // Fetch penghuni data yang aktif saja
       const { data: penghuniData, error: penghuniError } = await supabase
         .from("penghuni")
         .select("*")
-        .eq("kos_id", data[0].id);
+        .eq("kos_id", data[0].id)
+        .eq("status", "aktif");
 
       if (penghuniError) {
         console.error("Error fetching penghuni:", penghuniError);
@@ -72,6 +75,16 @@ const Dashboard = () => {
       }
 
       setDaftarPenghuni(penghuniData || []);
+
+      // Cek jika user memiliki paket Gratis dan penghuni lebih dari 5
+      if (
+        data[0].plan_type !== "pro" &&
+        penghuniData &&
+        penghuniData.length > 5
+      ) {
+        setShowLimitWarning(true);
+      }
+
       setLoading(false);
     }
 
@@ -114,12 +127,12 @@ const Dashboard = () => {
     }).length;
   };
 
-  // Menghitung jumlah kamar terisi
+  // Menghitung jumlah kamar terisi dari penghuni yang aktif
   const kamarTerisi = daftarPenghuni.length;
-  // Ganti totalKamar dengan data dari Supabase
+  // Mengambil total kamar dari data kos
   const totalKamar = kosData?.jumlah_kamar || 0;
   // Menghitung jumlah kamar kosong
-  const kamarKosong = totalKamar - kamarTerisi;
+  const kamarKosong = Math.max(0, totalKamar - kamarTerisi); // Pastikan tidak negatif
   // Menghitung kamar yang sebentar lagi jatuh tempo
   const kamarJatuhTempo = hitungKamarJatuhTempo(daftarPenghuni);
 
@@ -137,6 +150,53 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      {/* Warning Overlay */}
+      {showLimitWarning && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-md w-full mx-4">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-16 h-16 text-red-500"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Peringatan!</h2>
+              <p className="text-gray-600">
+                Anda memiliki lebih dari 5 penghuni aktif dengan paket Gratis.
+                Silakan hapus beberapa penghuni hingga tersisa maksimal 5
+                penghuni, atau upgrade ke paket Pro untuk mengelola lebih banyak
+                penghuni.
+              </p>
+              <div className="flex flex-col gap-3 mt-6">
+                <button
+                  onClick={() => router.push("/dashboard/penghuni")}
+                  className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg w-full"
+                >
+                  Kelola Penghuni
+                </button>
+                <button
+                  onClick={() => router.push("/dashboard/pengaturan")}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg w-full"
+                >
+                  Upgrade ke Pro
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-5 sm:p-8 space-y-5">
         {/* Header dengan pengaturan */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
@@ -145,7 +205,7 @@ const Dashboard = () => {
               {kosData?.nama_kos || "Kos Anda"}
             </h1>
             <p className="text-gray-600 sm:mt-1 text-center sm:text-left mb-2">
-              Paket lisensi: Gratis
+              Paket lisensi: {kosData?.plan_type === "pro" ? "Pro" : "Gratis"}
             </p>
           </div>
 

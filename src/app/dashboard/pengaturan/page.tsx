@@ -18,6 +18,7 @@ export default function Pengaturan() {
     templatePesan:
       "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
   });
+  const [planType, setPlanType] = useState("free");
 
   useEffect(() => {
     const fetchKosData = async () => {
@@ -54,6 +55,7 @@ export default function Pengaturan() {
               data.template_pesan ||
               "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
           });
+          setPlanType(data.plan_type || "free");
         }
       } catch (error) {
         console.error("Error:", error);
@@ -67,7 +69,7 @@ export default function Pengaturan() {
 
   const handleIncrement = () => {
     const currentValue = parseInt(formData.jumlahKamar);
-    if (currentValue < 5) {
+    if (planType === "pro" || currentValue < 5) {
       setFormData({ ...formData, jumlahKamar: String(currentValue + 1) });
       setShowUpgradeMessage(false);
     } else {
@@ -128,6 +130,29 @@ export default function Pengaturan() {
     } catch (error) {
       console.error("Error:", error);
       alert("Terjadi kesalahan saat menyimpan data");
+    }
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      await supabase
+        .from("kos")
+        .update({
+          plan_type: "pro",
+        })
+        .eq("id", kosData.id);
+
+      setPlanType("pro");
+
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 2000);
+
+      setShowUpgradeMessage(false);
+    } catch (error) {
+      console.error("Error saat upgrade:", error);
+      alert("Gagal melakukan upgrade");
     }
   };
 
@@ -233,7 +258,6 @@ export default function Pengaturan() {
             </div>
 
             {/* Template Pesan WhatsApp */}
-
             <div className="space-y-3 border border-gray-200 rounded-lg p-4">
               <div className="space-y-2">
                 <label className="block text-gray-700 font-medium">
@@ -251,17 +275,21 @@ export default function Pengaturan() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-gray-600">Paket lisensi:</p>
-              <p className="font-medium text-gray-900">Gratis</p>
+              <p className="text-gray-700 font-medium">Paket Lisensi :</p>
+              <p className="font-medium text-gray-900">
+                {planType === "pro" ? "Pro" : "Gratis"}
+              </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {}}
-              className="w-full bg-yellow-500 text-white font-medium py-3 rounded-lg hover:bg-yellow-600 transition-colors mb-4"
-            >
-              Upgrade ke Pro
-            </button>
+            {planType !== "pro" && (
+              <button
+                type="button"
+                onClick={handleUpgrade}
+                className="w-full bg-yellow-500 text-white font-medium py-3 rounded-lg hover:bg-yellow-600 transition-colors mb-4"
+              >
+                Upgrade ke Pro
+              </button>
+            )}
 
             <button
               type="submit"

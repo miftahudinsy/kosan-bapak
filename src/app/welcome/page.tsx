@@ -51,6 +51,7 @@ export default function Welcome() {
       jumlah_kamar: jumlahKamar,
       template_pesan:
         "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
+      plan_type: "free",
     });
 
     if (error) {

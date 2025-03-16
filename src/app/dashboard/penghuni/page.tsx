@@ -62,6 +62,7 @@ const Penghuni = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // Load data from Supabase on component mount
   useEffect(() => {
@@ -115,10 +116,12 @@ const Penghuni = () => {
   };
 
   const handleTambahPenghuniClick = () => {
-    if (penghuni.length >= 5) {
+    // Jika bukan pro dan jumlah penghuni >= 5, tampilkan modal limit
+    if (kosData.plan_type !== "pro" && penghuni.length >= 5) {
       setIsLimitModalOpen(true);
       return;
     }
+    // Jika pro atau jumlah penghuni < 5, tampilkan modal tambah penghuni
     setIsModalOpen(true);
   };
 
@@ -171,6 +174,37 @@ const Penghuni = () => {
         throw new Error("Mohon lengkapi semua field yang wajib diisi");
       }
 
+      // Cek jumlah penghuni aktif saat ini
+      const { data: penghuniAktif, error: penghuniError } = await supabase
+        .from("penghuni")
+        .select("id")
+        .eq("kos_id", kosData.id)
+        .eq("status", "aktif");
+
+      if (penghuniError) {
+        throw new Error("Gagal mengecek jumlah penghuni aktif");
+      }
+
+      const jumlahPenghuniAktif = penghuniAktif?.length || 0;
+
+      // Jika jumlah penghuni aktif sama dengan jumlah kamar, update jumlah kamar
+      if (jumlahPenghuniAktif >= kosData.jumlah_kamar) {
+        const { error: updateKamarError } = await supabase
+          .from("kos")
+          .update({ jumlah_kamar: kosData.jumlah_kamar + 1 })
+          .eq("id", kosData.id);
+
+        if (updateKamarError) {
+          throw new Error("Gagal mengupdate jumlah kamar");
+        }
+
+        // Update state kosData
+        setKosData({
+          ...kosData,
+          jumlah_kamar: kosData.jumlah_kamar + 1,
+        });
+      }
+
       // Format data penghuni
       const penghuniData = {
         kos_id: kosData.id,
@@ -189,18 +223,14 @@ const Penghuni = () => {
         status: "aktif",
       };
 
-      console.log("Data yang akan dikirim:", penghuniData);
-
       // Insert penghuni data
-      const { data: newPenghuniData, error: penghuniError } = await supabase
-        .from("penghuni")
-        .insert(penghuniData)
-        .select()
-        .single();
+      const { data: newPenghuniData, error: penghuniInsertError } =
+        await supabase.from("penghuni").insert(penghuniData).select().single();
 
-      if (penghuniError) {
-        console.error("Error detail:", penghuniError);
-        throw new Error(`Gagal menambahkan penghuni: ${penghuniError.message}`);
+      if (penghuniInsertError) {
+        throw new Error(
+          `Gagal menambahkan penghuni: ${penghuniInsertError.message}`
+        );
       }
 
       // Insert pembayaran data
@@ -221,7 +251,6 @@ const Penghuni = () => {
         .insert(pembayaranData);
 
       if (pembayaranError) {
-        console.error("Error detail pembayaran:", pembayaranError);
         throw new Error(
           `Gagal menambahkan pembayaran: ${pembayaranError.message}`
         );
@@ -273,6 +302,68 @@ const Penghuni = () => {
     return date.toLocaleDateString("id-ID", options);
   };
 
+  const handleTambahPenghuni = async (
+    dataPenghuni: Omit<
+      PenghuniData,
+      "id" | "kos_id" | "created_at" | "updated_at"
+    >
+  ) => {
+    // Cek dulu jumlah penghuni saat ini
+    const { data: existingPenghuni, error: countError } = await supabase
+      .from("penghuni")
+      .select("id")
+      .eq("kos_id", kosData.id);
+
+    if (countError) {
+      console.error("Error menghitung penghuni:", countError);
+      return false;
+    }
+
+    const jumlahPenghuniSaatIni = existingPenghuni
+      ? existingPenghuni.length
+      : 0;
+
+    // Jika bukan pro, cek batas maksimal
+    if (kosData.plan_type !== "pro" && jumlahPenghuniSaatIni >= 5) {
+      alert(
+        "Oops! Anda hanya bisa menambahkan 5 penghuni. Upgrade ke Pro untuk kelola kos Anda tanpa batas!"
+      );
+      return false;
+    }
+
+    // Cek apakah perlu menambah jumlah kamar
+    if (jumlahPenghuniSaatIni >= kosData.jumlah_kamar) {
+      // Tambah jumlah kamar di database
+      const { error: updateError } = await supabase
+        .from("kos")
+        .update({ jumlah_kamar: kosData.jumlah_kamar + 1 })
+        .eq("id", kosData.id);
+
+      if (updateError) {
+        console.error("Error menambah jumlah kamar:", updateError);
+        return false;
+      }
+
+      // Update state kosData
+      setKosData({
+        ...kosData,
+        jumlah_kamar: kosData.jumlah_kamar + 1,
+      });
+    }
+
+    // Proses penambahan penghuni
+    const { error: insertError } = await supabase
+      .from("penghuni")
+      .insert({ ...dataPenghuni, kos_id: kosData.id });
+
+    if (insertError) {
+      console.error("Error menambah penghuni:", insertError);
+      return false;
+    }
+
+    return true;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
       {/* Toast Notification */}
@@ -307,6 +398,12 @@ const Penghuni = () => {
           <h1 className="text-2xl font-bold text-gray-900 ">
             Daftar Penghuni Kos
           </h1>
+          <button
+            onClick={handleTambahPenghuniClick}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-4 sm:mt-0"
+          >
+            Tambah Penghuni Baru
+          </button>
         </div>
 
         <div className="mb-6 flex justify-between items-center">
@@ -338,13 +435,6 @@ const Penghuni = () => {
             </span>
           </div>
         </div>
-        <button
-          onClick={handleTambahPenghuniClick}
-          className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-500 font-bold "
-        >
-          <FaPlus className="text-blue-600" /> Tambah Penghuni Baru
-        </button>
-
         <section className="space-y-3">
           {penghuni.length === 0 ? (
             <div className="text-center py-8">
