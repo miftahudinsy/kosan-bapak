@@ -107,6 +107,20 @@ const Penghuni = () => {
     loadData();
   }, [router, supabase]);
 
+  useEffect(() => {
+    // Tambahkan class overflow-hidden ke body saat modal terbuka
+    if (isModalOpen || isLimitModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalOpen, isLimitModalOpen]);
+
   const handleBack = () => {
     router.push("/dashboard");
   };
@@ -528,8 +542,8 @@ const Penghuni = () => {
         </section>
 
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 overflow-hidden h-[100vh] w-[100vw]">
+            <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
               <button
                 onClick={handleCloseModal}
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -792,7 +806,7 @@ const Penghuni = () => {
 
         {/* Modal Limit Penghuni */}
         {isLimitModalOpen && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 overflow-hidden h-[100vh] w-[100vw]">
             <div className="bg-white p-8 rounded-xl shadow-lg relative max-w-md w-full mx-4">
               <button
                 onClick={handleCloseLimitModal}
