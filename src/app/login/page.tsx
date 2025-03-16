@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -133,7 +134,13 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             className="w-full bg-white border border-gray-300 text-gray-700 p-4 rounded-md hover:bg-gray-50 flex items-center justify-center"
           >
-            <img src="/google-icon.png" alt="Google" className="w-5 h-5 mr-2" />
+            <Image
+              src="/google-icon.png"
+              alt="Google"
+              width={20}
+              height={20}
+              className="mr-2"
+            />
             Masuk dengan Google
           </button>
         </div>

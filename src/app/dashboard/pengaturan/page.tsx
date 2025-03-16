@@ -63,7 +63,7 @@ export default function Pengaturan() {
     };
 
     fetchKosData();
-  }, []);
+  }, [router, supabase]);
 
   const handleIncrement = () => {
     const currentValue = parseInt(formData.jumlahKamar);

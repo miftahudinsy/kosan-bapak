@@ -76,7 +76,7 @@ const Dashboard = () => {
     }
 
     getKosData();
-  }, []);
+  }, [router, supabase]);
 
   const handlePenghuniClick = () => {
     router.push("/dashboard/penghuni");

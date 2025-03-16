@@ -104,7 +104,7 @@ const Penghuni = () => {
     }
 
     loadData();
-  }, []);
+  }, [router, supabase]);
 
   const handleBack = () => {
     router.push("/dashboard");

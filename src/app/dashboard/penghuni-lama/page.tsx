@@ -81,7 +81,7 @@ export default function PenghuniLama() {
     };
 
     fetchPenghuniLama();
-  }, []);
+  }, [router, supabase]);
 
   const handleBack = () => {
     router.push("/dashboard/penghuni");

@@ -15,7 +15,7 @@ export interface PenghuniData {
   nomor_hp: string;
   nomor_ktp: string;
   kontak_darurat: string;
-  deposit: number;
+  deposit: number | string;
   tanggal_mulai: string;
   tanggal_selesai: string;
   status: string;
@@ -71,16 +71,16 @@ export const tambahPenghuni = (dataPenghuni: Omit<PenghuniData, "id">) => {
   const currentData = getDaftarPenghuni();
   const lastId =
     currentData.length > 0
-      ? Math.max(...currentData.map((item) => item.id))
+      ? Math.max(...currentData.map((item) => parseInt(item.id, 10)))
       : 0;
-  const newId = lastId + 1;
+  const newId = (lastId + 1).toString();
 
   // Format deposit jika ada
   const formattedData = { ...dataPenghuni };
   if (
     formattedData.deposit &&
     typeof formattedData.deposit === "string" &&
-    !formattedData.deposit.startsWith("Rp")
+    !formattedData.deposit.toString().startsWith("Rp")
   ) {
     formattedData.deposit = formatCurrency(formattedData.deposit);
   }
@@ -95,7 +95,7 @@ export const tambahPenghuni = (dataPenghuni: Omit<PenghuniData, "id">) => {
 
 // Edit data penghuni
 export const editPenghuni = (
-  id: number,
+  id: string,
   data: Partial<Omit<PenghuniData, "id">>
 ) => {
   const currentData = getDaftarPenghuni();
@@ -105,7 +105,7 @@ export const editPenghuni = (
   if (
     formattedData.deposit &&
     typeof formattedData.deposit === "string" &&
-    !formattedData.deposit.startsWith("Rp")
+    !formattedData.deposit.toString().startsWith("Rp")
   ) {
     formattedData.deposit = formatCurrency(formattedData.deposit);
   }
@@ -118,7 +118,7 @@ export const editPenghuni = (
 };
 
 // Perpanjang masa kos
-export const perpanjangKos = (id: number, tanggalSelesaiBaru: string) => {
+export const perpanjangKos = (id: string, tanggalSelesaiBaru: string) => {
   const currentData = getDaftarPenghuni();
   const updatedData = currentData.map((item) =>
     item.id === id ? { ...item, tanggal_selesai: tanggalSelesaiBaru } : item
@@ -128,7 +128,7 @@ export const perpanjangKos = (id: number, tanggalSelesaiBaru: string) => {
 };
 
 // Hapus data penghuni
-export const hapusPenghuni = (id: number) => {
+export const hapusPenghuni = (id: string) => {
   const currentData = getDaftarPenghuni();
   const updatedData = currentData.filter((item) => item.id !== id);
   saveDataToLocalStorage(updatedData);
@@ -136,15 +136,15 @@ export const hapusPenghuni = (id: number) => {
 };
 
 // Mendapatkan detail penghuni berdasarkan ID
-export const getPenghuniById = (id: number): PenghuniData | undefined => {
+export const getPenghuniById = (id: string): PenghuniData | undefined => {
   const currentData = getDaftarPenghuni();
   return currentData.find((item) => item.id === id);
 };
 
 export interface RiwayatPembayaran {
-  id: number;
-  penghuni_id: number;
-  kos_id?: number;
+  id: string;
+  penghuni_id: string;
+  kos_id?: string;
   tanggal: string;
   nominal: string;
   jumlah?: number;
@@ -172,17 +172,17 @@ export const tambahRiwayatPembayaran = (
   const riwayatPembayaran = getRiwayatPembayaran();
   const id =
     riwayatPembayaran.length > 0
-      ? Math.max(...riwayatPembayaran.map((item) => item.id)) + 1
+      ? Math.max(...riwayatPembayaran.map((item) => parseInt(item.id, 10))) + 1
       : 1;
 
-  const newData = { ...data, id };
+  const newData = { ...data, id: id.toString() };
   riwayatPembayaran.push(newData);
   localStorage.setItem("riwayatPembayaran", JSON.stringify(riwayatPembayaran));
   return riwayatPembayaran;
 };
 
 // Fungsi untuk menghapus riwayat pembayaran
-export const hapusRiwayatPembayaran = (id: number) => {
+export const hapusRiwayatPembayaran = (id: string) => {
   const riwayatPembayaran = getRiwayatPembayaran();
   const updatedData = riwayatPembayaran.filter((item) => item.id !== id);
   localStorage.setItem("riwayatPembayaran", JSON.stringify(updatedData));
@@ -190,8 +190,8 @@ export const hapusRiwayatPembayaran = (id: number) => {
 };
 
 export interface RiwayatPengeluaran {
-  id: number;
-  kos_id?: number;
+  id: string;
+  kos_id?: string;
   deskripsi: string;
   jenis: "pengeluaran";
   kategori: string;
@@ -219,10 +219,10 @@ export const tambahRiwayatPengeluaran = (
   const riwayatPengeluaran = getRiwayatPengeluaran();
   const id =
     riwayatPengeluaran.length > 0
-      ? Math.max(...riwayatPengeluaran.map((item) => item.id)) + 1
+      ? Math.max(...riwayatPengeluaran.map((item) => parseInt(item.id, 10))) + 1
       : 1;
 
-  const newData = { ...data, id };
+  const newData = { ...data, id: id.toString() };
   riwayatPengeluaran.push(newData);
   localStorage.setItem(
     "riwayatPengeluaran",
@@ -232,7 +232,7 @@ export const tambahRiwayatPengeluaran = (
 };
 
 // Fungsi untuk menghapus riwayat pengeluaran
-export const hapusRiwayatPengeluaran = (id: number) => {
+export const hapusRiwayatPengeluaran = (id: string) => {
   const riwayatPengeluaran = getRiwayatPengeluaran();
   const updatedData = riwayatPengeluaran.filter((item) => item.id !== id);
   localStorage.setItem("riwayatPengeluaran", JSON.stringify(updatedData));
@@ -247,7 +247,7 @@ const savePenghuniLamaToLocalStorage = (data: PenghuniData[]) => {
 };
 
 // Fungsi untuk mengakhiri sewa kos
-export const akhiriSewaKos = (idPenghuni: number) => {
+export const akhiriSewaKos = (idPenghuni: string) => {
   if (typeof window === "undefined") {
     return;
   }
@@ -289,7 +289,7 @@ export const getDaftarPenghuniLama = (): PenghuniData[] => {
 };
 
 // Fungsi untuk menghapus data penghuni lama
-export const hapusPenghuniLama = (id: number): PenghuniData[] => {
+export const hapusPenghuniLama = (id: string): PenghuniData[] => {
   const penghuniLama = getPenghuniLamaFromLocalStorage();
   const updatedData = penghuniLama.filter((item) => item.id !== id);
   savePenghuniLamaToLocalStorage(updatedData);
