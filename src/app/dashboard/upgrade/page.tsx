@@ -184,7 +184,10 @@ export default function UpgradePage() {
                   <span className="font-semibold">{licenseCode}</span> telah
                   tersimpan.
                 </p>
-                <p>Mohon tunggu proses verifikasi.</p>
+                <p>
+                  Mohon tunggu proses verifikasi (maksimal 24 jam).<br></br>Anda
+                  boleh meninggalkan halaman ini.
+                </p>
               </div>
             )}
           </div>
