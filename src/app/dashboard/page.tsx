@@ -18,10 +18,10 @@ interface KosData {
 interface PenghuniData {
   id: string;
   nama: string;
-  nomorKamar: string;
-  nomorHp: string;
-  tanggalMulai: string;
-  tanggalSelesai: string;
+  nomor_kamar: string;
+  nomor_hp: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
   biayaSewa: number;
   status: string;
 }
@@ -74,7 +74,24 @@ const Dashboard = () => {
         return;
       }
 
-      setDaftarPenghuni(penghuniData || []);
+      // Log untuk debugging
+      console.log("Data penghuni:", penghuniData);
+
+      // Map data dari database ke format yang digunakan di komponen
+      const mappedPenghuni = penghuniData
+        ? penghuniData.map((p) => ({
+            id: p.id,
+            nama: p.nama,
+            nomor_kamar: p.nomor_kamar,
+            nomor_hp: p.nomor_hp,
+            tanggal_mulai: p.tanggal_mulai,
+            tanggal_selesai: p.tanggal_selesai,
+            biayaSewa: 0, // Sesuaikan jika ada data biaya
+            status: p.status,
+          }))
+        : [];
+
+      setDaftarPenghuni(mappedPenghuni);
 
       // Cek jika user memiliki paket Gratis dan penghuni lebih dari 5
       if (
@@ -118,12 +135,31 @@ const Dashboard = () => {
 
   // Fungsi untuk menghitung kamar yang jatuh tempo
   const hitungKamarJatuhTempo = (penghuniList: PenghuniData[]): number => {
+    // Log untuk debugging
+    console.log("Menghitung kamar jatuh tempo dari:", penghuniList);
+
     return penghuniList.filter((penghuni) => {
+      // Pastikan tanggal_selesai ada
+      if (!penghuni.tanggal_selesai) {
+        console.log("Penghuni tanpa tanggal selesai:", penghuni);
+        return false;
+      }
+
       const today = new Date();
-      const selesaiDate = new Date(penghuni.tanggalSelesai);
+      today.setHours(0, 0, 0, 0); // Reset waktu ke awal hari
+
+      const selesaiDate = new Date(penghuni.tanggal_selesai);
+      selesaiDate.setHours(0, 0, 0, 0); // Reset waktu ke awal hari
+
       const diffTime = selesaiDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 && diffDays < 7;
+
+      console.log(
+        `Penghuni ${penghuni.nama}, Kamar ${penghuni.nomor_kamar}: ${diffDays} hari tersisa`
+      );
+
+      // Kamar jatuh tempo jika kurang dari atau sama dengan 7 hari
+      return diffDays >= 0 && diffDays <= 7;
     }).length;
   };
 
@@ -243,7 +279,7 @@ const Dashboard = () => {
               {/* Menampilkan pesan kamar jatuh tempo */}
               {kamarJatuhTempo > 0 && (
                 <p className="text-yellow-600 sm:text-lg font-semibold">
-                  Ada {kamarJatuhTempo} kamar sebentar lagi jatuh tempo!
+                  {kamarJatuhTempo} kamar akan jatuh tempo dalam 7 hari!
                 </p>
               )}
             </div>
