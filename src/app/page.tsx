@@ -276,7 +276,7 @@ const Home = () => {
                 Pro Bulanan
               </h3>
               <p className="text-4xl font-bold mb-6">
-                Rp50.000
+                Rp49.000
                 <span className="text-lg font-normal text-gray-600">
                   /bulan
                 </span>
@@ -293,10 +293,6 @@ const Home = () => {
                 <li className="flex items-center">
                   <span className="text-blue-500 mr-2">✓</span>
                   Pengingat pembayaran via WhatsApp
-                </li>
-                <li className="flex items-center">
-                  <span className="text-blue-500 mr-2">✓</span>
-                  Dukungan prioritas
                 </li>
               </ul>
               <button className="w-full bg-blue-600 text-white py-3 rounded-full font-semibold hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">

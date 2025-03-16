@@ -133,29 +133,6 @@ export default function Pengaturan() {
     }
   };
 
-  const handleUpgrade = async () => {
-    try {
-      await supabase
-        .from("kos")
-        .update({
-          plan_type: "pro",
-        })
-        .eq("id", kosData.id);
-
-      setPlanType("pro");
-
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-      }, 2000);
-
-      setShowUpgradeMessage(false);
-    } catch (error) {
-      console.error("Error saat upgrade:", error);
-      alert("Gagal melakukan upgrade");
-    }
-  };
-
   const handleBack = () => {
     router.back();
   };
@@ -281,10 +258,10 @@ export default function Pengaturan() {
               </p>
             </div>
 
-            {planType !== "pro" && (
+            {planType === "free" && (
               <button
                 type="button"
-                onClick={handleUpgrade}
+                onClick={() => router.push("/dashboard/upgrade")}
                 className="w-full bg-yellow-500 text-white font-medium py-3 rounded-lg hover:bg-yellow-600 transition-colors mb-4"
               >
                 Upgrade ke Pro

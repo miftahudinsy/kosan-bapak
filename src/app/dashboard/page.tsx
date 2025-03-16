@@ -186,7 +186,7 @@ const Dashboard = () => {
                   Kelola Penghuni
                 </button>
                 <button
-                  onClick={() => router.push("/dashboard/pengaturan")}
+                  onClick={() => router.push("/dashboard/upgrade")}
                   className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg w-full"
                 >
                   Upgrade ke Pro
