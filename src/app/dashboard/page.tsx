@@ -279,7 +279,7 @@ const Dashboard = () => {
               {/* Menampilkan pesan kamar jatuh tempo */}
               {kamarJatuhTempo > 0 && (
                 <p className="text-yellow-600 sm:text-lg font-semibold">
-                  {kamarJatuhTempo} kamar akan jatuh tempo dalam 7 hari!
+                  Ada {kamarJatuhTempo} kamar sebentar lagi jatuh tempo!
                 </p>
               )}
             </div>
