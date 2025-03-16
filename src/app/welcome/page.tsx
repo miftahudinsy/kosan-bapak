@@ -125,13 +125,6 @@ export default function Welcome() {
                   Oops! Anda hanya bisa menambahkan 5 kamar.<br></br>
                   Upgrade ke Pro untuk kelola kos Anda tanpa batas!
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {}}
-                  className="w-full bg-yellow-500 text-white font-medium py-2 rounded-lg hover:bg-yellow-600 transition-colors"
-                >
-                  Upgrade ke Pro
-                </button>
               </div>
             )}
           </div>
