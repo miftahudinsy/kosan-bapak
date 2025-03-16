@@ -1,8 +1,8 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -12,7 +12,17 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Cek parameter demo saat komponen dimuat
+  useEffect(() => {
+    const isDemo = searchParams.get("demo") === "true";
+    if (isDemo) {
+      setEmail("demo@kosanbapak.com");
+      setPassword("kosanbapak132");
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

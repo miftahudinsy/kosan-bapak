@@ -41,7 +41,10 @@ const Home = () => {
             >
               Masuk
             </button>
-            <button className="bg-white text-blue-600 text-lg px-8 py-3 rounded-full font-semibold shadow-lg transition-all hover:bg-gray-50">
+            <button
+              onClick={() => router.push("/login?demo=true")}
+              className="bg-white text-blue-600 text-lg px-8 py-3 rounded-full font-semibold shadow-lg transition-all hover:bg-gray-50"
+            >
               Coba Akun Demo
             </button>
           </div>
