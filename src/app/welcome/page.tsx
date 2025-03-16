@@ -50,7 +50,7 @@ export default function Welcome() {
       nama_kos: namaKos,
       jumlah_kamar: jumlahKamar,
       template_pesan:
-        "Halo {nama}, ini adalah pengingat untuk pembayaran kos bulan ini.",
+        "Pangapunten, kos sampai tanggal [tanggalselesaikos], mohon konfirmasi kalau sudah bayar",
     });
 
     if (error) {
