@@ -205,7 +205,7 @@ const Dashboard = () => {
               {kosData?.nama_kos || "Kos Anda"}
             </h1>
             <p className="text-gray-600 sm:mt-1 text-center sm:text-left mb-2">
-              Paket lisensi: {kosData?.plan_type === "pro" ? "Pro" : "Gratis"}
+              Paket Lisensi : {kosData?.plan_type === "pro" ? "Pro" : "Gratis"}
             </p>
           </div>
 

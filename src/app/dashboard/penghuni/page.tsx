@@ -398,12 +398,6 @@ const Penghuni = () => {
           <h1 className="text-2xl font-bold text-gray-900 ">
             Daftar Penghuni Kos
           </h1>
-          <button
-            onClick={handleTambahPenghuniClick}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-4 sm:mt-0"
-          >
-            Tambah Penghuni Baru
-          </button>
         </div>
 
         <div className="mb-6 flex justify-between items-center">
@@ -435,6 +429,14 @@ const Penghuni = () => {
             </span>
           </div>
         </div>
+        <button
+          onClick={handleTambahPenghuniClick}
+          className="flex items-center justify-center w-full gap-2 bg-blue-100 hover:bg-blue-200 p-4 py-6 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:scale-105 text-gray-500 font-bold"
+        >
+          {" "}
+          <FaPlus className="text-blue-600" />
+          Tambah Penghuni Baru
+        </button>
         <section className="space-y-3">
           {penghuni.length === 0 ? (
             <div className="text-center py-8">
