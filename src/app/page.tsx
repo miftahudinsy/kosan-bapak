@@ -335,8 +335,30 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Video Tutorial Section */}
+      <div className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Video Tutorial
+          </h2>
+          <div className="relative pb-[56.25%] h-0 overflow-hidden rounded-xl shadow-xl">
+            <iframe
+              className="absolute top-0 left-0 w-full h-full"
+              src="https://www.youtube.com/embed/accCqiIS8J4"
+              title="Video Tutorial KosanBapak"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+          <p className="text-gray-600 text-center mt-6">
+            Pelajari cara menggunakan aplikasi KosanBapak dengan menonton video
+            tutorial di atas
+          </p>
+        </div>
+      </div>
+
       {/* Footer */}
-      <footer className="bg-white py-8 px-4">
+      <footer className="bg-blue-100 py-8 px-4">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center">
           <p className="text-gray-600 text-center sm:text-left mb-4 sm:mb-0">
             © KosanBapak 2025 - Syarif Miftahudin
@@ -345,7 +367,7 @@ const Home = () => {
             href="https://www.instagram.com/miftahudinsy/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
+            className="text-gray-600 hover:text-gray-500 flex items-center gap-2"
           >
             <FaInstagram size={20} />
           </Link>
