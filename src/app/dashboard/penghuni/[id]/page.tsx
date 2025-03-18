@@ -164,10 +164,22 @@ export default function DetailPenghuni({
     >
   ) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    // Khusus untuk deposit, format nilai saat diinput
+    if (name === "deposit") {
+      // Hapus semua karakter non-numerik
+      const numericValue = value.replace(/[^\d]/g, "");
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue, // Simpan nilai numerik saja di state
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleEditSubmit = async (event: FormEvent) => {
@@ -501,6 +513,21 @@ export default function DetailPenghuni({
     );
   };
 
+  // Fungsi untuk memformat angka menjadi format Rupiah
+  const formatRupiah = (angka: string | null): string => {
+    if (!angka) return "Rp0,-";
+
+    // Hapus karakter non-numerik
+    const number = angka.replace(/[^\d]/g, "");
+
+    // Ubah ke format Rupiah dengan titik sebagai pemisah ribuan
+    const formatted = `Rp${Number(number)
+      .toLocaleString("id-ID")
+      .replace(/,/g, ".")},-`;
+
+    return formatted;
+  };
+
   if (!penghuni) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
@@ -605,7 +632,7 @@ export default function DetailPenghuni({
               <div className="space-y-1">
                 <h2 className="text-gray-600">Deposit</h2>
                 <p className="text-lg font-semibold text-green-600">
-                  {penghuni.deposit}
+                  {formatRupiah(penghuni.deposit)}
                 </p>
               </div>
             )}
@@ -822,7 +849,7 @@ export default function DetailPenghuni({
                   value={formData.deposit}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Contoh: 300.000"
+                  placeholder="Contoh: 300000"
                 />
               </div>
               <div>
