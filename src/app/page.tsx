@@ -276,7 +276,7 @@ const Home = () => {
                 Pro Bulanan
               </h3>
               <p className="text-4xl font-bold mb-6">
-                Rp49.000
+                Rp10.000
                 <span className="text-lg font-normal text-gray-600">
                   /bulan
                 </span>
@@ -304,7 +304,7 @@ const Home = () => {
             <div className="bg-white p-8 rounded-2xl shadow-lg sm:col-span-1 lg:col-span-1">
               <h3 className="text-2xl font-bold mb-4">Pro Tahunan</h3>
               <p className="text-4xl font-bold mb-6">
-                Rp390.000
+                Rp100.000
                 <span className="text-lg font-normal text-gray-600">
                   /tahun
                 </span>
@@ -324,7 +324,7 @@ const Home = () => {
                 </li>
                 <li className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
-                  Hemat 35%
+                  Hemat 2 bulan
                 </li>
               </ul>
               <button className="w-full bg-blue-600 text-white py-2 rounded-full font-semibold hover:bg-blue-700">
