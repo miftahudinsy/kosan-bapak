@@ -97,6 +97,10 @@ export default function DetailPenghuni({
     kontak_darurat_nomor_hp: "",
     nominal_pembayaran: "",
   });
+  const [tanggalDisplay, setTanggalDisplay] = useState({
+    mulai: "",
+    selesai: "",
+  });
   const [templatePesan, setTemplatePesan] = useState("");
 
   useEffect(() => {
@@ -145,6 +149,16 @@ export default function DetailPenghuni({
               formattedPenghuni.kontak_darurat?.nomor_hp || "",
             nominal_pembayaran: "",
           });
+
+          // Set tanggal display saat pertama kali data diambil
+          setTanggalDisplay({
+            mulai: formattedPenghuni.tanggal_mulai
+              ? formatDate(formattedPenghuni.tanggal_mulai)
+              : "",
+            selesai: formattedPenghuni.tanggal_selesai
+              ? formatDate(formattedPenghuni.tanggal_selesai)
+              : "",
+          });
         }
       } catch (error) {
         console.error("Error fetching penghuni:", error);
@@ -173,6 +187,26 @@ export default function DetailPenghuni({
       setFormData((prev) => ({
         ...prev,
         [name]: numericValue, // Simpan nilai numerik saja di state
+      }));
+    } else if (name === "tanggal_mulai" || name === "tanggal_selesai") {
+      // Format tampilan tanggal
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        setTanggalDisplay((prev) => ({
+          ...prev,
+          [name === "tanggal_mulai" ? "mulai" : "selesai"]: formatDate(value),
+        }));
+      } else {
+        setTanggalDisplay((prev) => ({
+          ...prev,
+          [name === "tanggal_mulai" ? "mulai" : "selesai"]: "",
+        }));
+      }
+
+      // Simpan nilai ISO untuk dikirim ke server
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
       }));
     } else {
       setFormData((prev) => ({
@@ -860,48 +894,43 @@ export default function DetailPenghuni({
                 <label className="block text-gray-700 font-medium mb-2">
                   Tanggal Mulai Kos
                 </label>
-                <input
-                  type="date"
-                  name="tanggal_mulai"
-                  value={formData.tanggal_mulai}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    name="tanggal_mulai"
+                    value={formData.tanggal_mulai}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.tanggal_mulai ? "text-transparent" : ""
+                    }`}
+                  />
+                  {formData.tanggal_mulai && (
+                    <div className="absolute inset-0 flex items-center px-4 text-gray-700 pointer-events-none">
+                      {tanggalDisplay.mulai}
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
                   Tanggal Selesai Kos
                 </label>
-                <input
-                  type="date"
-                  name="tanggal_selesai"
-                  value={formData.tanggal_selesai}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Nominal Pembayaran
-                </label>
-                <input
-                  type="text"
-                  name="nominal_pembayaran"
-                  value={
-                    formData.nominal_pembayaran
-                      ? formatRupiah(formData.nominal_pembayaran)
-                      : ""
-                  }
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Contoh: 1.200.000"
-                  onFocus={(e) =>
-                    (e.target.value = formData.nominal_pembayaran || "")
-                  }
-                  onBlur={(e) =>
-                    (e.target.value = formatRupiah(formData.nominal_pembayaran))
-                  }
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    name="tanggal_selesai"
+                    value={formData.tanggal_selesai}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.tanggal_selesai ? "text-transparent" : ""
+                    }`}
+                  />
+                  {formData.tanggal_selesai && (
+                    <div className="absolute inset-0 flex items-center px-4 text-gray-700 pointer-events-none">
+                      {tanggalDisplay.selesai}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex gap-4">
                 <button
@@ -933,13 +962,22 @@ export default function DetailPenghuni({
                 <label className="block text-gray-700 font-medium mb-2">
                   Tanggal Selesai Kos
                 </label>
-                <input
-                  type="date"
-                  name="tanggal_selesai"
-                  value={formData.tanggal_selesai}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    name="tanggal_selesai"
+                    value={formData.tanggal_selesai}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.tanggal_selesai ? "text-transparent" : ""
+                    }`}
+                  />
+                  {formData.tanggal_selesai && (
+                    <div className="absolute inset-0 flex items-center px-4 text-gray-700 pointer-events-none">
+                      {tanggalDisplay.selesai}
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
