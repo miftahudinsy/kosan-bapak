@@ -160,14 +160,106 @@ const Penghuni = () => {
     setIsLimitModalOpen(false);
   };
 
+  const formatRupiah = (angka: string | null): string => {
+    if (!angka) return "Rp0";
+
+    // Hapus karakter non-numerik
+    const number = angka.replace(/[^\d]/g, "");
+
+    // Ubah ke format Rupiah dengan titik sebagai pemisah ribuan
+    const formatted = `Rp${Number(number)
+      .toLocaleString("id-ID")
+      .replace(/,/g, ".")}`;
+
+    return formatted;
+  };
+
+  // Pertama, kita perlu menambahkan fungsi untuk memformat tanggal dari format ISO ke format lokal
+  const formatTanggalInput = (isoDate: string): string => {
+    if (!isoDate) return "";
+
+    const date = new Date(isoDate);
+    const options: Intl.DateTimeFormatOptions = {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    };
+    return date.toLocaleDateString("id-ID", options);
+  };
+
+  // Fungsi untuk mengkonversi dari format lokal ke ISO ketika menyimpan
+  const parseFormattedDate = (formattedDate: string): string => {
+    if (!formattedDate) return "";
+
+    // Jika sudah dalam format ISO, kembalikan saja
+    if (formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return formattedDate;
+    }
+
+    try {
+      // Parse tanggal format lokal seperti "23 April 2025"
+      const parts = formattedDate.split(" ");
+      const day = parseInt(parts[0], 10);
+      const monthNames = [
+        "Januari",
+        "Februari",
+        "Maret",
+        "April",
+        "Mei",
+        "Juni",
+        "Juli",
+        "Agustus",
+        "September",
+        "Oktober",
+        "November",
+        "Desember",
+      ];
+      const month = monthNames.indexOf(parts[1]);
+      const year = parseInt(parts[2], 10);
+
+      if (isNaN(day) || month === -1 || isNaN(year)) {
+        return "";
+      }
+
+      // Format ke ISO
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        day
+      ).padStart(2, "0")}`;
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      return "";
+    }
+  };
+
+  // Perlu memodifikasi handleInputChange untuk menangani input tanggal dalam format lokal
   const handleInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [name]: value,
-    }));
+
+    // Khusus untuk deposit dan nominal_pembayaran, format nilai saat diinput
+    if (name === "deposit" || name === "nominal_pembayaran") {
+      // Hapus semua karakter non-numerik
+      const numericValue = value.replace(/[^\d]/g, "");
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue, // Simpan nilai numerik saja di state
+      }));
+    }
+    // Untuk tanggal, simpan dalam format ISO tapi tampilkan dalam format lokal
+    else if (name === "tanggal_mulai" || name === "tanggal_selesai") {
+      // Value dari input type="date" sudah dalam format ISO, jadi simpan langsung
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    } else {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -726,10 +818,16 @@ const Penghuni = () => {
                     type="text"
                     id="deposit"
                     name="deposit"
-                    value={formData.deposit}
+                    value={
+                      formData.deposit ? formatRupiah(formData.deposit) : ""
+                    }
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Contoh: 300.000"
+                    onFocus={(e) => (e.target.value = formData.deposit || "")}
+                    onBlur={(e) =>
+                      (e.target.value = formatRupiah(formData.deposit))
+                    }
                   />
                 </div>
 
@@ -741,15 +839,24 @@ const Penghuni = () => {
                   >
                     Tanggal Mulai Kos <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    id="tanggal_mulai"
-                    name="tanggal_mulai"
-                    value={formData.tanggal_mulai}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      id="tanggal_mulai"
+                      name="tanggal_mulai"
+                      value={formData.tanggal_mulai}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formData.tanggal_mulai ? "text-transparent" : ""
+                      }`}
+                      required
+                    />
+                    {formData.tanggal_mulai && (
+                      <div className="absolute inset-0 flex items-center px-4 text-gray-700 pointer-events-none">
+                        {formatTanggalInput(formData.tanggal_mulai)}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Tanggal Selesai */}
@@ -760,15 +867,24 @@ const Penghuni = () => {
                   >
                     Kos Sampai Tanggal <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    id="tanggal_selesai"
-                    name="tanggal_selesai"
-                    value={formData.tanggal_selesai}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      id="tanggal_selesai"
+                      name="tanggal_selesai"
+                      value={formData.tanggal_selesai}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formData.tanggal_selesai ? "text-transparent" : ""
+                      }`}
+                      required
+                    />
+                    {formData.tanggal_selesai && (
+                      <div className="absolute inset-0 flex items-center px-4 text-gray-700 pointer-events-none">
+                        {formatTanggalInput(formData.tanggal_selesai)}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Nominal Pembayaran */}
@@ -783,11 +899,23 @@ const Penghuni = () => {
                     type="text"
                     id="nominal_pembayaran"
                     name="nominal_pembayaran"
-                    value={formData.nominal_pembayaran}
+                    value={
+                      formData.nominal_pembayaran
+                        ? formatRupiah(formData.nominal_pembayaran)
+                        : ""
+                    }
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                     placeholder="Contoh: 1.200.000"
+                    onFocus={(e) =>
+                      (e.target.value = formData.nominal_pembayaran || "")
+                    }
+                    onBlur={(e) =>
+                      (e.target.value = formatRupiah(
+                        formData.nominal_pembayaran
+                      ))
+                    }
                   />
                 </div>
 

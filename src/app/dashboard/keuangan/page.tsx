@@ -116,6 +116,7 @@ const Keuangan = () => {
     tanggal: "",
     nominal: "",
   });
+  const [tanggalDisplay, setTanggalDisplay] = useState("");
   const [statistik, setStatistik] = useState({
     totalPemasukanBulanIni: 0,
     totalPengeluaranBulanIni: 0,
@@ -475,13 +476,13 @@ const Keuangan = () => {
       amount = parseInt(amount.replace(/\D/g, ""), 10);
     }
     if (isNaN(amount)) {
-      return "Rp0,-";
+      return "Rp0";
     }
     // Membulatkan ke ribuan terdekat
     const roundedAmount = Math.round(amount / 1000) * 1000;
     return `Rp${roundedAmount
       .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
   };
 
   // Helper function untuk memastikan nilai numerik valid
@@ -585,16 +586,41 @@ const Keuangan = () => {
       tanggal: "",
       nominal: "",
     });
+    setTanggalDisplay("");
   };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    if (name === "nominal") {
+      // Hapus semua karakter non-numerik
+      const numericValue = value.replace(/[^\d]/g, "");
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue, // Simpan nilai numerik saja di state
+      }));
+    } else if (name === "tanggal") {
+      // Format tampilan tanggal
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        setTanggalDisplay(formatDate(value));
+      } else {
+        setTanggalDisplay("");
+      }
+
+      // Simpan nilai ISO untuk dikirim ke server
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmitPengeluaran = async (e: React.FormEvent) => {
@@ -710,6 +736,17 @@ const Keuangan = () => {
       year: "numeric",
     };
     return date.toLocaleDateString("id-ID", options);
+  };
+
+  // Fungsi untuk memformat angka menjadi format Rupiah
+  const formatRupiah = (angka: string | null): string => {
+    if (!angka) return "Rp0";
+
+    // Hapus karakter non-numerik
+    const number = angka.replace(/[^\d]/g, "");
+
+    // Ubah ke format Rupiah dengan titik sebagai pemisah ribuan
+    return `Rp${Number(number).toLocaleString("id-ID").replace(/,/g, ".")}`;
   };
 
   const getNamaPenghuni = (idPenghuni?: number | string) => {
@@ -1430,15 +1467,25 @@ const Keuangan = () => {
                 >
                   Tanggal Pengeluaran <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="date"
-                  id="tanggal"
-                  name="tanggal"
-                  value={formData.tanggal}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    id="tanggal"
+                    name="tanggal"
+                    value={formData.tanggal}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.tanggal ? "text-transparent" : ""
+                    }`}
+                    required
+                    placeholder="Pilih tanggal pengeluaran"
+                  />
+                  {formData.tanggal && (
+                    <div className="absolute inset-0 flex items-center px-4 text-gray-700 pointer-events-none">
+                      {formatDate(formData.tanggal)}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -1452,11 +1499,15 @@ const Keuangan = () => {
                   type="text"
                   id="nominal"
                   name="nominal"
-                  value={formData.nominal}
+                  value={formData.nominal ? formatRupiah(formData.nominal) : ""}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                   placeholder="Contoh: 300.000"
+                  onFocus={(e) => (e.target.value = formData.nominal || "")}
+                  onBlur={(e) =>
+                    (e.target.value = formatRupiah(formData.nominal))
+                  }
                 />
               </div>
 

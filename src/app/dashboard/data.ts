@@ -52,11 +52,11 @@ export const formatCurrency = (amount: number | string): string => {
   }
 
   if (isNaN(amount)) {
-    return "Rp0,-";
+    return "Rp0";
   }
 
   // Format angka dengan pemisah ribuan
-  return `Rp${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},-`;
+  return `Rp${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 };
 
 // Parse mata uang Indonesia menjadi angka

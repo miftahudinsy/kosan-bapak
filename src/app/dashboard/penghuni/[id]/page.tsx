@@ -515,7 +515,7 @@ export default function DetailPenghuni({
 
   // Fungsi untuk memformat angka menjadi format Rupiah
   const formatRupiah = (angka: string | null): string => {
-    if (!angka) return "Rp0,-";
+    if (!angka) return "Rp0";
 
     // Hapus karakter non-numerik
     const number = angka.replace(/[^\d]/g, "");
@@ -523,7 +523,7 @@ export default function DetailPenghuni({
     // Ubah ke format Rupiah dengan titik sebagai pemisah ribuan
     const formatted = `Rp${Number(number)
       .toLocaleString("id-ID")
-      .replace(/,/g, ".")},-`;
+      .replace(/,/g, ".")}`;
 
     return formatted;
   };
@@ -846,10 +846,14 @@ export default function DetailPenghuni({
                 <input
                   type="text"
                   name="deposit"
-                  value={formData.deposit}
+                  value={formData.deposit ? formatRupiah(formData.deposit) : ""}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Contoh: 300000"
+                  placeholder="Contoh: 300.000"
+                  onFocus={(e) => (e.target.value = formData.deposit || "")}
+                  onBlur={(e) =>
+                    (e.target.value = formatRupiah(formData.deposit))
+                  }
                 />
               </div>
               <div>
@@ -874,6 +878,29 @@ export default function DetailPenghuni({
                   value={formData.tanggal_selesai}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Nominal Pembayaran
+                </label>
+                <input
+                  type="text"
+                  name="nominal_pembayaran"
+                  value={
+                    formData.nominal_pembayaran
+                      ? formatRupiah(formData.nominal_pembayaran)
+                      : ""
+                  }
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contoh: 1.200.000"
+                  onFocus={(e) =>
+                    (e.target.value = formData.nominal_pembayaran || "")
+                  }
+                  onBlur={(e) =>
+                    (e.target.value = formatRupiah(formData.nominal_pembayaran))
+                  }
                 />
               </div>
               <div className="flex gap-4">
@@ -921,10 +948,20 @@ export default function DetailPenghuni({
                 <input
                   type="text"
                   name="nominal_pembayaran"
-                  value={formData.nominal_pembayaran}
+                  value={
+                    formData.nominal_pembayaran
+                      ? formatRupiah(formData.nominal_pembayaran)
+                      : ""
+                  }
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Contoh: 1.200.000"
+                  onFocus={(e) =>
+                    (e.target.value = formData.nominal_pembayaran || "")
+                  }
+                  onBlur={(e) =>
+                    (e.target.value = formatRupiah(formData.nominal_pembayaran))
+                  }
                 />
               </div>
               <div className="flex gap-4">
